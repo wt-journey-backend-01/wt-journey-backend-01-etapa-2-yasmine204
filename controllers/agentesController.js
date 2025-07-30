@@ -5,7 +5,25 @@ const ApiError = require('../utils/ApiError');
 
 const getAgentes = (req, res, next) => {
     try {
-        const agentes = repository.findAll();
+        let agentes = repository.findAll();
+        const { cargo, sort } = req.query;
+
+        if(cargo) {
+            agentes = agentes.filter(agente => 
+                agente.cargo === cargo.toLowerCase());
+        }
+
+        if(sort) {
+            const isDesc = sort.startsWith('-');
+            const field = isDesc ? sort.slice(1) : sort;
+
+            agentes = agentes.sort((a, b) => {
+                const dateA = new Date(a[field]);
+                const dateB = new Date(b[field]);
+
+                return isDesc ? dateB - dateA : dateA - dateB;
+            });
+        }
 
         res.status(200).json(agentes);
     } 
@@ -85,8 +103,8 @@ const partiallyUpdateAgente = (req, res, next) => {
             return next(new ApiError('ID inválido.', 400));
         }
 
-        const parciallyData = agentesSchema.partial().parse(req.body);
-        const updated = repository.partiallyUpdate(id, parciallyData);
+        const partiallyData = agentesSchema.partial().parse(req.body);
+        const updated = repository.partiallyUpdate(id, partiallyData);
 
         if (!updated) {
             return next(new ApiError('Agente não encontrado.', 404));

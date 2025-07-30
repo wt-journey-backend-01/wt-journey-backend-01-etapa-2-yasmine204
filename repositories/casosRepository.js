@@ -2,25 +2,18 @@ const { v4: uuidv4 } = require('uuid');
 
 const casos = [
     {
-        id: uuidv4(),
+        id: "321e4567-e89b-12d3-a456-426614174000",
         titulo: "homicídio",
         descricao: "Disparos foram reportados às 22:33 do dia 10/07/2007 na região do bairro União, resultando na morte da vítima, um homem de 45 anos.",
         status: "aberto",
-        agente_id: uuidv4()
+        agente_id: "123e4567-e89b-12d3-a456-426614174000"
     },
     {
-        id: uuidv4(),
-        titulo: "roubo",
-        descricao: "Uma loja de eletrônicos foi assaltada no centro às 15:20 do dia 18/02/2023. Dois suspeitos armados fugiram em uma moto.",
-        status: "solucionado",
-        agente_id: uuidv4()
-    },
-    {
-        id: uuidv4(),
-        titulo: "tráfico de drogas",
-        descricao: "Foram encontrados entorpecentes em uma residência no bairro Novo Horizonte durante uma operação no dia 02/06/2022.",
+        id: "654e3210-b98a-76c5-d432-123456789abc",
+        titulo: "roubo a banco",
+        descricao: "Assalto registrado às 14:20 do dia 21/08/2020 em agência bancária do centro, com reféns e violência.",
         status: "aberto",
-        agente_id: uuidv4()
+        agente_id: "987f6543-a21b-34c5-b678-987654321000"
     }
 ];
 
@@ -44,8 +37,7 @@ const updateCompletely = (id, data) => {
     if(index !== -1) {
         casos[index] = {
             id: id,
-            ...data,
-            agente_id: casos[index].agente_id 
+            ...data
     };
 
         return casos[index];
