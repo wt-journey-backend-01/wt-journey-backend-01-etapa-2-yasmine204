@@ -1,40 +1,48 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 6 créditos restantes para usar o sistema de feedback AI.
+Você tem 5 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para yasmine204:
 
-Nota final: **48.0/100**
+Nota final: **68.1/100**
 
-# Feedback para yasmine204 🚓✨
+# Feedback para yasmine204 🚔✨
 
-Olá, Yasmine! Que legal ver o seu empenho nessa API para o Departamento de Polícia! 🎉 Você já construiu uma base muito boa, com endpoints funcionando para agentes e casos, além de uma arquitetura modular bem organizada. Isso é essencial para projetos escaláveis e de fácil manutenção, e você mandou bem nisso! 👏
-
----
-
-## O que você já acertou e merece destaque 🌟
-
-- Seu projeto está organizado em módulos claros: `routes`, `controllers`, `repositories` e `utils`. Isso é fundamental para manter o código limpo e fácil de entender.
-- Os endpoints principais para `/agentes` e `/casos` estão implementados com todos os métodos HTTP (GET, POST, PUT, PATCH, DELETE). Isso mostra um bom domínio dos conceitos RESTful.
-- Você implementou filtros simples para casos e agentes, como filtragem por `cargo` e `status`, e também ordenação para agentes. Isso é um diferencial muito legal! 🚀
-- O tratamento de erros com a classe `ApiError` e o middleware `errorHandler` está presente, o que é ótimo para padronizar respostas de erro.
-- Você fez uso da biblioteca `zod` para validação dos dados recebidos, garantindo que o payload esteja no formato esperado.
-- Parabéns por implementar os filtros bônus de busca por status e agente nos casos, que estão funcionando corretamente! 🎯
+Olá, yasmine! Primeiro, parabéns pelo empenho e dedicação em desenvolver essa API para o Departamento de Polícia! 🎉 Você fez um ótimo trabalho implementando várias funcionalidades essenciais, e isso já é um grande passo para se tornar um(a) expert em Node.js e Express! Vamos analisar juntos o que está indo muito bem e onde podemos melhorar para deixar sua API ainda mais robusta e alinhada com as expectativas do desafio. Bora lá? 🚀
 
 ---
 
-## Pontos que precisam de atenção para destravar sua API 🔍
+## 🎯 Pontos Fortes que Merecem Destaque
 
-### 1. Endpoint para buscar o agente responsável por um caso `/casos/:id/agente`
+- **Estrutura modular bem organizada**: Você separou claramente as rotas, controladores e repositórios, o que é fundamental para manter o código limpo e escalável. Isso mostra maturidade no desenvolvimento!  
+- **Implementação completa dos métodos HTTP para `/agentes` e `/casos`**: Os endpoints para GET, POST, PUT, PATCH e DELETE estão presentes e funcionando em boa parte.  
+- **Validações de UUID e tratamento de erros com mensagens personalizadas**: O uso do `ApiError` e a validação dos IDs com `isValidUuid` estão bem aplicados, garantindo respostas adequadas para IDs inválidos ou recursos não encontrados.  
+- **Filtros simples implementados para casos (por status e agente_id)**: Ótimo trabalho ao permitir filtrar os casos por esses parâmetros via query string!  
+- **Filtros e ordenação para agentes funcionando parcialmente**: Você já implementou a ordenação por alguns campos, o que é um bônus bacana!  
+- **Uso do Zod para validação dos dados do payload**: Isso ajuda a garantir que os dados recebidos estejam no formato esperado, evitando erros futuros.  
 
-Ao analisar seu controlador `casosController.js`, percebi que o método `getAgenteByCasoId` tem um problema que impede seu funcionamento correto:
+Você está no caminho certo e já entregou uma base sólida! 👏
+
+---
+
+## 🕵️ Análise Detalhada dos Pontos que Precisam de Atenção
+
+### 1. Endpoint `/casos/:id/agente` — busca do agente responsável pelo caso
+
+Você implementou a rota e o controlador para buscar o agente pelo ID do caso:
+
+```js
+router.get('/:id/agente', controller.getAgenteByCasoId);
+```
+
+E no controlador:
 
 ```js
 const getAgenteByCasoId = (req, res, next) => {
     try {
         const { id } = req.params;
 
-        if(!isValidUuid(caso_id)) {
+        if(!isValidUuid(id)) {
             return next(new ApiError('ID de caso inválido.', 400));
         }
 
@@ -56,99 +64,88 @@ const getAgenteByCasoId = (req, res, next) => {
 };
 ```
 
-**Problema principal:** Você está usando a variável `caso_id` na validação do UUID, mas essa variável não existe. O correto é usar o `id` que você extraiu do `req.params`. Isso gera um erro e faz com que a validação nunca passe.
+**O que notei:**  
+Apesar do código parecer correto, o teste relacionado a esse endpoint não passou. Isso pode indicar que sua rota está registrada corretamente, mas talvez o teste espere algum detalhe específico, como:
 
-**Como corrigir:**
+- **Nome do parâmetro na URL:** Você usou `:id` para o ID do caso, o que está correto, mas é bom garantir que o teste também esteja chamando `/casos/:id/agente` (que parece estar correto).  
+- **Formato da resposta:** Você está retornando o agente completo, o que está certo.  
+- **Possível problema com a manipulação do array de agentes ou casos:** No repositório, o método `findById` está correto, então o problema pode estar na forma como os dados estão armazenados ou atualizados.  
 
-```js
-if(!isValidUuid(id)) {
-    return next(new ApiError('ID de caso inválido.', 400));
-}
-```
-
-Essa pequena confusão de nomes é comum, mas bloqueia completamente o funcionamento do endpoint. Corrigindo isso, o endpoint `/casos/:id/agente` vai funcionar corretamente para buscar o agente responsável.
+**Dica:** Faça um teste manual usando o Postman ou Insomnia para chamar o endpoint `/casos/321e4567-e89b-12d3-a456-426614174000/agente` (com um ID válido de caso que você tem no array) e veja se a resposta é a esperada. Se funcionar, o problema pode estar em algum detalhe do teste, mas se não funcionar, revise se o `findById` realmente está encontrando o caso e o agente.
 
 ---
 
-### 2. Endpoint de busca (search) de casos por palavra-chave
+### 2. Endpoint de busca de casos por palavra-chave (`/casos/search?q=termo`)
 
-No método `searchCasos` do `casosController.js`, você implementou a busca por título e descrição, o que é ótimo! Porém, faltou adicionar essa rota no arquivo `routes/casosRoutes.js`.
-
-Atualmente, seu arquivo `casosRoutes.js` tem essa linha correta para o search:
+Você implementou o endpoint `/casos/search` com o controlador `searchCasos` que filtra os casos pelo título ou descrição:
 
 ```js
-router.get('/search', controller.searchCasos);
-```
+const searchCasos = (req, res, next) => {
+    try {
+        let casos = casosRepository.findAll();
+        const { q } = req.query;
 
-Então essa parte está ok, mas vale sempre testar para garantir que o endpoint está respondendo conforme esperado.
+        if(q) {
+            const term = q.toLowerCase();
+            casos = casos.filter(caso => 
+                caso.titulo.toLowerCase().includes(term) || 
+                caso.descricao.toLowerCase().includes(term)
+            );
+        }
 
----
-
-### 3. Validação e tratamento de erros para payloads incorretos
-
-Você usou o `zod` para validar os dados recebidos, o que é excelente! Porém, alguns testes indicam que ao enviar payloads com formato incorreto, sua API não está retornando o status 400 com as mensagens de erro personalizadas.
-
-Isso pode acontecer se a validação não estiver sendo aplicada em todos os métodos ou se o erro não estiver sendo tratado corretamente no `catch`.
-
-Por exemplo, no `createAgente` você fez assim:
-
-```js
-catch (error) {
-    if (error.name === 'ZodError') {
-        const errors = error.errors.map(e => ({
-            field: e.path.join('.'),
-            message: e.message
-        }));
-
-        return next(new ApiError('Dados inválidos', 400, errors));
+        res.status(200).json(casos);
+    } 
+    catch (error) {
+        next(new ApiError(error.message, 400));
     }
-
-    next(new ApiError(error.message, 400));
-}
-```
-
-Esse padrão está correto, mas é importante garantir que todos os métodos que recebem dados (POST, PUT, PATCH) façam a validação e tratamento da mesma forma. Ao revisar seu código, percebi que você seguiu esse padrão, então o problema pode estar em algum detalhe:
-
-- Verifique se o middleware `errorHandler` está configurado para retornar corretamente o status e o corpo com os erros personalizados.
-- Confirme que o middleware está colocado **após** as rotas no `server.js`, o que você já fez corretamente.
-
-Se quiser, posso ajudar a revisar seu `errorHandler.js` para garantir que ele retorne os erros personalizados como esperado. Isso é essencial para que o cliente da API entenda o que deu errado.
-
----
-
-### 4. Atualização parcial e completa de agentes e casos: retorno 404 para IDs inexistentes
-
-Você já faz a validação do UUID e verifica se o recurso existe antes de atualizar, o que é ótimo! Porém, para garantir que o fluxo está correto:
-
-- Confirme que o método no `repository` retorna `null` ou `false` quando o ID não é encontrado, para que o controller possa enviar o 404.
-- No seu código, isso está feito corretamente, por exemplo:
-
-```js
-const updateCompletely = (id, data) => {
-    const index = agentes.findIndex((agente) => agente.id === id);
-    
-    if(index !== -1) {
-        agentes[index] = {
-            id: id,
-            ...data 
-        };
-
-        return agentes[index];
-    }
-
-    return null;
 };
 ```
 
-Então essa parte está correta. Apenas verifique se o seu código de testes (ou uso manual) está enviando IDs inexistentes para testar essa resposta.
+**O que notei:**  
+O código do controlador está correto e bem escrito. Porém, o teste bônus que verifica essa funcionalidade não passou. Isso pode indicar que:
+
+- O endpoint `/casos/search` não está sendo chamado corretamente no teste (por exemplo, o teste pode estar esperando `/casos?search=termo` em vez de `/casos/search?q=termo`).  
+- Ou o teste espera que a busca funcione integrada ao endpoint `/casos` com query param `q` e não em uma rota separada.  
+
+**Sugestão:** Confirme o que o desafio espera sobre a rota de busca. Muitas vezes, filtros e buscas são implementados diretamente no endpoint principal, como `/casos?q=termo`, em vez de uma rota `/casos/search`. Se for esse o caso, você pode integrar a lógica de busca no `getCasos`:
+
+```js
+const getCasos = (req, res, next) => {
+    try {
+        let casos = casosRepository.findAll();
+        const { agente_id, status, q } = req.query;
+
+        if(agente_id) {
+            casos = casos.filter(caso => caso.agente_id === agente_id);
+        }
+
+        if(status) {
+            casos = casos.filter(caso => caso.status.toLowerCase() === status.toLowerCase());
+        }
+
+        if(q) {
+            const term = q.toLowerCase();
+            casos = casos.filter(caso => 
+                caso.titulo.toLowerCase().includes(term) || 
+                caso.descricao.toLowerCase().includes(term)
+            );
+        }
+
+        res.status(200).json(casos);
+    }
+    catch(error) {
+        next(new ApiError('Erro ao listar casos.'));
+    }
+};
+```
+
+Assim, a busca fica unificada no endpoint principal e pode resolver o problema.
 
 ---
 
-### 5. Ordenação por data de incorporação dos agentes
+### 3. Ordenação e filtro por data de incorporação no endpoint `/agentes`
 
-Você implementou a ordenação no `getAgentes` pelo campo `dataDeIncorporacao` e outros, o que é ótimo! Porém, alguns testes bônus indicam falha nessa funcionalidade.
-
-Seu código para ordenação é:
+Você implementou ordenação para os agentes, que pode ser feita pelo campo `dataDeIncorporacao`, `nome` ou `cargo`, aceitando ordenação crescente e decrescente (com `-` na frente do campo):
 
 ```js
 const validSortFields = ['dataDeIncorporacao', 'nome', 'cargo'];
@@ -173,74 +170,107 @@ if(sort) {
 }
 ```
 
-Esse trecho parece correto, então o problema pode estar relacionado a:
+**O que notei:**  
+A lógica está ótima, porém, um ponto importante para garantir que a ordenação funcione corretamente é assegurar que as datas estejam no formato ISO (`YYYY-MM-DD`) e que o campo no array de agentes esteja exatamente com esse nome. Seu array de agentes tem o campo `dataDeIncorporacao` (com "D" maiúsculo), e você está usando exatamente esse nome no código, o que é correto.
 
-- Formato das datas no array `agentes` — elas estão em string ISO, o que é bom.
-- A query string enviada para ordenar — certifique-se de que o parâmetro `sort` está sendo passado corretamente (exemplo: `?sort=dataDeIncorporacao` ou `?sort=-dataDeIncorporacao`).
-- Pode ser que o teste espere que a ordenação seja estável ou que retorne uma cópia do array, e não modifique o original. Você pode tentar trocar para:
+Se o teste de ordenação não passou, pode ser por causa de:
+
+- O teste esperando uma ordenação estável e você usando o método `.sort()` diretamente no array original, o que pode alterar o estado do array global. Uma boa prática é criar uma cópia antes de ordenar:
 
 ```js
-agentes = [...agentes].sort(...);
+agentes = [...agentes].sort((a, b) => { ... });
 ```
 
-para evitar modificar o array original, o que pode causar efeitos colaterais.
+- Ou o teste esperando que o filtro por data seja combinado com o filtro por cargo, e talvez o filtro por cargo esteja ignorando o sort. Revise a ordem dos filtros e ordenações para garantir que ambos funcionem juntos.
 
 ---
 
-### 6. Pequenos detalhes para melhorar a legibilidade e consistência
+### 4. Mensagens de erro customizadas para argumentos inválidos
 
-- No `createAgente`, você faz:
+Você está usando o `ApiError` para enviar mensagens customizadas, por exemplo:
 
 ```js
-const dataReceived = {
-    nome: nome,
-    dataDeIncorporacao: dataDeIncorporacao,
-    cargo: cargo.toLowerCase()
-};
+if(!isValidUuid(id)) {
+    return next(new ApiError('ID inválido.', 400));
+}
 ```
 
-Se o campo `cargo` for opcional ou não string, isso pode causar erro. Seria legal validar se `cargo` existe antes de usar `.toLowerCase()`, para evitar exceções.
+Isso é ótimo! Porém, alguns testes bônus falharam relacionados a mensagens de erro customizadas para argumentos inválidos.
 
-- Em vários lugares você usa `toLowerCase()` para normalizar strings, o que é ótimo para evitar erros de case. Só atente para garantir que o campo exista antes de chamar.
+**O que pode estar acontecendo:**
+
+- Em alguns pontos, você está retornando mensagens genéricas como `'Erro ao listar agentes.'` ou `'Erro ao listar casos.'` dentro do `catch`, o que pode não ser o esperado pelo teste.  
+- Além disso, o middleware de tratamento de erros (`errorHandler`) deve garantir que essas mensagens personalizadas sejam enviadas no corpo da resposta, com o status correto e no formato esperado (por exemplo, `{ error: 'Mensagem' }`).  
+
+**Sugestão:** Reveja seu middleware `errorHandler` para garantir que ele está enviando as mensagens personalizadas corretamente e que o status code está correto. Um exemplo simples de middleware de erro que funciona bem:
+
+```js
+function errorHandler(err, req, res, next) {
+    const status = err.statusCode || 500;
+    res.status(status).json({ error: err.message || 'Erro interno do servidor' });
+}
+```
+
+Se seu middleware estiver diferente, ajuste para seguir essa estrutura.
 
 ---
 
-## Recursos para você aprofundar e corrigir esses pontos 🧑‍💻
+### 5. Pequenos detalhes que podem impactar
 
-- Para entender melhor como validar dados e tratar erros na API com status 400 e mensagens personalizadas, recomendo este vídeo:  
+- No controlador de casos, na função `partiallyUpdateCaso`, você escreveu:
+
+```js
+const parciallyData = casosSchema.partial().parse(req.body);
+```
+
+Note que o nome da variável está com typo: `parciallyData` (o correto é `partiallyData`). Embora isso não cause erro, manter nomes consistentes ajuda na legibilidade.
+
+- Em alguns catch blocks, você está retornando mensagens genéricas, como:
+
+```js
+next(new ApiError('Erro ao listar agentes.'));
+```
+
+Tente passar o erro original para facilitar o debug, ou pelo menos enviar a mensagem do erro capturado:
+
+```js
+next(new ApiError(error.message || 'Erro ao listar agentes.'));
+```
+
+---
+
+## 📚 Recursos para Você Aprimorar Ainda Mais
+
+- Para entender melhor a arquitetura MVC e organização de rotas, controllers e repositórios:  
+  https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH  
+
+- Para aprofundar na manipulação de arrays e ordenação em JavaScript:  
+  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI  
+
+- Para dominar o tratamento de erros e validação de dados em APIs Express:  
   https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_  
-  E também a documentação dos status HTTP 400 e 404:  
-  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400  
-  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404
 
-- Para organizar suas rotas e usar o Express Router corretamente, veja a documentação oficial:  
-  https://expressjs.com/pt-br/guide/routing.html
-
-- Para entender melhor a arquitetura MVC e como estruturar seu projeto Node.js, este vídeo é excelente:  
-  https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH
-
-- Para manipulação de arrays, filtros e ordenação em JavaScript, que são essenciais para esses endpoints, recomendo:  
-  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI
+- Para entender melhor o protocolo HTTP, status codes e métodos REST:  
+  https://youtu.be/RSZHvQomeKE  
 
 ---
 
-## Resumo dos principais pontos para focar 📝
+## 📝 Resumo dos Principais Pontos para Focar
 
-- **Corrigir a variável `caso_id` para `id` no método `getAgenteByCasoId`** para que o endpoint `/casos/:id/agente` funcione corretamente.
-- **Garantir que o middleware `errorHandler` retorne as mensagens de erro personalizadas corretamente**, especialmente para erros de validação com `zod`.
-- **Revisar a implementação da ordenação no endpoint de agentes**, garantindo que o array original não seja modificado diretamente e que o parâmetro `sort` seja interpretado corretamente.
-- **Verificar o uso de `.toLowerCase()` nos campos opcionais para evitar erros inesperados.**
-- **Testar manualmente os endpoints com payloads inválidos e IDs inexistentes para garantir que os status 400 e 404 estão sendo retornados corretamente.**
-
----
-
-Yasmine, seu código está muito bem estruturado e você já domina conceitos importantes como rotas, controllers, validação e tratamento de erros — isso é fantástico! 🚀 Com esses ajustes, sua API vai ficar ainda mais robusta e alinhada com as melhores práticas. Continue assim, sempre buscando entender a raiz dos problemas e aprimorando seu código! 💪
-
-Se precisar, estou aqui para ajudar no que for! Boa jornada e sucesso! 🌟👮‍♀️
+- **Verifique a rota `/casos/:id/agente` manualmente para garantir que está funcionando e retornando o agente correto.**  
+- **Considere unificar a busca por palavra-chave no endpoint `/casos` via query param `q` em vez de criar uma rota separada `/casos/search`.**  
+- **Garanta que a ordenação dos agentes cria uma cópia do array antes de ordenar para evitar efeitos colaterais.**  
+- **Revise o middleware de tratamento de erros para enviar mensagens customizadas e status codes corretos.**  
+- **Mantenha nomes de variáveis consistentes para evitar confusões futuras.**  
+- **Teste manualmente suas rotas com ferramentas como Postman para validar o comportamento esperado.**  
 
 ---
 
-Abraços do seu Code Buddy! 🤖❤️
+Yasmine, seu código está muito bem estruturado e você já entregou uma base excelente! 💪 Com esses ajustes finos, tenho certeza que sua API vai ficar ainda mais robusta e alinhada com as melhores práticas do mercado. Continue praticando, explorando e aprendendo! Estou aqui torcendo pelo seu sucesso! 🚀✨
+
+Se precisar de ajuda para entender algum ponto, só chamar! 😉
+
+Um abraço e bons códigos! 👩‍💻👨‍💻
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
