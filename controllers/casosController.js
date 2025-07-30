@@ -72,15 +72,6 @@ const createCaso = (req, res, next) => {
         res.status(201).json(newCaso);
     } 
     catch (error) {
-        if (error.name === 'ZodError') {
-            const errors = error.errors.map(e => ({
-                field: e.path.join('.'),
-                message: e.message
-            }));
-            
-            return next(new ApiError('Dados inválidos', 400, errors));
-        }
-
         next(new ApiError(error.message, 400));
     }
 };
@@ -113,15 +104,6 @@ const updateCompletelyCaso = (req, res, next) => {
         res.status(200).json(updated);
     } 
     catch (error) {
-        if (error.name === 'ZodError') {
-            const errors = error.errors.map(e => ({
-                field: e.path.join('.'),
-                message: e.message
-            }));
-            
-            return next(new ApiError('Dados inválidos', 400, errors));
-        }
-
         next(new ApiError(error.message, 400));
     }
 };
@@ -156,15 +138,6 @@ const partiallyUpdateCaso = (req, res, next) => {
         res.status(200).json(updated);
     } 
     catch (error) {
-        if (error.name === 'ZodError') {
-            const errors = error.errors.map(e => ({
-                field: e.path.join('.'),
-                message: e.message
-            }));
-            
-            return next(new ApiError('Dados inválidos', 400, errors));
-        }
-
         next(new ApiError(error.message, 400));
     }
 };
@@ -194,7 +167,7 @@ const getAgenteByCasoId = (req, res, next) => {
     try {
         const { id } = req.params;
 
-        if(!isValidUuid(caso_id)) {
+        if(!isValidUuid(id)) {
             return next(new ApiError('ID de caso inválido.', 400));
         }
 

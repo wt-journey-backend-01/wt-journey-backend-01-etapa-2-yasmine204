@@ -79,15 +79,6 @@ const createAgente = (req, res, next) => {
 
     } 
     catch (error) {
-        if (error.name === 'ZodError') {
-            const errors = error.errors.map(e => ({
-                field: e.path.join('.'),
-                message: e.message
-            }));
-
-            return next(new ApiError('Dados inválidos', 400, errors));
-        }
-
         next(new ApiError(error.message, 400));
     }
 };
@@ -109,15 +100,6 @@ const updateCompletelyAgente = (req, res, next) => {
 
         res.status(200).json(updated);
     } catch (error) {
-        if (error.name === 'ZodError') {
-            const errors = error.errors.map(e => ({
-                field: e.path.join('.'),
-                message: e.message
-            }));
-            
-            return next(new ApiError('Dados inválidos', 400, errors));
-        }
-
         next(new ApiError(error.message, 400));
     }
 };
@@ -140,15 +122,6 @@ const partiallyUpdateAgente = (req, res, next) => {
         res.status(200).json(updated);
     } 
     catch (error) {
-        if (error.name === 'ZodError') {
-            const errors = error.errors.map(e => ({
-                field: e.path.join('.'),
-                message: e.message
-            }));
-            
-            return next(new ApiError('Dados inválidos', 400, errors));
-        }
-
         next(new ApiError(error.message, 400));
     }
 };
