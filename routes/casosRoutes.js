@@ -11,7 +11,7 @@ router.put('/:id', controller.updateCompletelyCaso);
 router.patch('/:id', controller.partiallyUpdateCaso);
 router.delete('/:id', controller.deleteCaso);
 
-router.get('/:caso_id/agente', controller.getAgenteByCasoId);
+router.get('/:id/agente', controller.getAgenteByCasoId);
 
 
 module.exports = router;

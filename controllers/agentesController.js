@@ -10,19 +10,28 @@ const getAgentes = (req, res, next) => {
 
         if(cargo) {
             agentes = agentes.filter(agente => 
-                agente.cargo === cargo.toLowerCase());
+                agente.cargo.toLowerCase() === cargo.toLowerCase());
         }
 
+        const validSortFields = ['dataDeIncorporacao', 'nome', 'cargo'];
         if(sort) {
             const isDesc = sort.startsWith('-');
             const field = isDesc ? sort.slice(1) : sort;
 
-            agentes = agentes.sort((a, b) => {
-                const dateA = new Date(a[field]);
-                const dateB = new Date(b[field]);
-
-                return isDesc ? dateB - dateA : dateA - dateB;
-            });
+            if(validSortFields.includes(field)) {
+                agentes = agentes.sort((a, b) => {
+                    if(field === 'dataDeIncorporacao') {
+                        const dateA = new Date(a[field]);
+                        const dateB = new Date(b[field]);
+                        return isDesc ? dateB - dateA : dateA - dateB;
+                    } 
+                    else {
+                        return isDesc 
+                            ? b[field].localeCompare(a[field]) 
+                            : a[field].localeCompare(b[field]);
+                    }
+                });
+            } 
         }
 
         res.status(200).json(agentes);
@@ -70,6 +79,15 @@ const createAgente = (req, res, next) => {
 
     } 
     catch (error) {
+        if (error.name === 'ZodError') {
+            const errors = error.errors.map(e => ({
+                field: e.path.join('.'),
+                message: e.message
+            }));
+
+            return next(new ApiError('Dados inválidos', 400, errors));
+        }
+
         next(new ApiError(error.message, 400));
     }
 };
@@ -91,6 +109,15 @@ const updateCompletelyAgente = (req, res, next) => {
 
         res.status(200).json(updated);
     } catch (error) {
+        if (error.name === 'ZodError') {
+            const errors = error.errors.map(e => ({
+                field: e.path.join('.'),
+                message: e.message
+            }));
+            
+            return next(new ApiError('Dados inválidos', 400, errors));
+        }
+
         next(new ApiError(error.message, 400));
     }
 };
@@ -113,6 +140,15 @@ const partiallyUpdateAgente = (req, res, next) => {
         res.status(200).json(updated);
     } 
     catch (error) {
+        if (error.name === 'ZodError') {
+            const errors = error.errors.map(e => ({
+                field: e.path.join('.'),
+                message: e.message
+            }));
+            
+            return next(new ApiError('Dados inválidos', 400, errors));
+        }
+
         next(new ApiError(error.message, 400));
     }
 };

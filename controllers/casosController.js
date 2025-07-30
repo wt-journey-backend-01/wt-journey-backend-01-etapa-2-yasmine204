@@ -15,7 +15,7 @@ const getCasos = (req, res, next) => {
         }
 
         if(status) {
-            casos = casos.filter(caso => caso.status === status.toLowerCase());
+            casos = casos.filter(caso => caso.status.toLowerCase() === status.toLowerCase());
         }
 
         res.status(200).json(casos);
@@ -72,6 +72,15 @@ const createCaso = (req, res, next) => {
         res.status(201).json(newCaso);
     } 
     catch (error) {
+        if (error.name === 'ZodError') {
+            const errors = error.errors.map(e => ({
+                field: e.path.join('.'),
+                message: e.message
+            }));
+            
+            return next(new ApiError('Dados inválidos', 400, errors));
+        }
+
         next(new ApiError(error.message, 400));
     }
 };
@@ -104,6 +113,15 @@ const updateCompletelyCaso = (req, res, next) => {
         res.status(200).json(updated);
     } 
     catch (error) {
+        if (error.name === 'ZodError') {
+            const errors = error.errors.map(e => ({
+                field: e.path.join('.'),
+                message: e.message
+            }));
+            
+            return next(new ApiError('Dados inválidos', 400, errors));
+        }
+
         next(new ApiError(error.message, 400));
     }
 };
@@ -138,6 +156,15 @@ const partiallyUpdateCaso = (req, res, next) => {
         res.status(200).json(updated);
     } 
     catch (error) {
+        if (error.name === 'ZodError') {
+            const errors = error.errors.map(e => ({
+                field: e.path.join('.'),
+                message: e.message
+            }));
+            
+            return next(new ApiError('Dados inválidos', 400, errors));
+        }
+
         next(new ApiError(error.message, 400));
     }
 };
@@ -165,13 +192,13 @@ const deleteCaso = (req, res, next) => {
 
 const getAgenteByCasoId = (req, res, next) => {
     try {
-        const { caso_id } = req.params;
+        const { id } = req.params;
 
         if(!isValidUuid(caso_id)) {
             return next(new ApiError('ID de caso inválido.', 400));
         }
 
-        const caso = casosRepository.findById(caso_id);
+        const caso = casosRepository.findById(id);
         if(!caso) {
             return next(new ApiError('Caso não encontrado.', 404));
         }
@@ -196,14 +223,15 @@ const searchCasos = (req, res, next) => {
         if(q) {
             const term = q.toLowerCase();
             casos = casos.filter(caso => 
-                caso.titulo.includes(term) || caso.descricao.includes(term)
+                caso.titulo.toLowerCase().includes(term) || 
+                caso.descricao.toLowerCase().includes(term)
             );
         }
 
         res.status(200).json(casos);
     } 
     catch (error) {
-        next(new ApiError('I love you', 400));
+        next(new ApiError(error.message, 400));
     }
 };
 
