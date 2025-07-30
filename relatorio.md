@@ -1,194 +1,237 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 8 créditos restantes para usar o sistema de feedback AI.
+Você tem 7 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para yasmine204:
 
-Nota final: **63.6/100**
+Nota final: **68.1/100**
 
-Olá, Yasmine! 👋✨ Que alegria poder revisar seu código e te ajudar a avançar ainda mais nesse desafio da API para o Departamento de Polícia! 🚓💻
+Olá, Yasmine! 👋😊 Que bom poder revisar seu projeto para a API do Departamento de Polícia! Antes de mais nada, parabéns por todo o esforço e dedicação que você colocou aqui. 🎉 Você conseguiu implementar a maior parte dos endpoints básicos dos recursos `/agentes` e `/casos` com uma organização muito boa, usando controllers, repositories e rotas — isso mostra que você já tem uma ótima noção de arquitetura modular, o que é fundamental para projetos escaláveis. 👏
 
----
-
-## 🎉 Primeiramente, parabéns pelos seus acertos!
-
-- Você estruturou seu projeto muito bem, com pastas claras para `controllers`, `routes`, `repositories` e `utils`. Isso é fundamental para um código organizado e de fácil manutenção.  
-- Os endpoints básicos para `/agentes` e `/casos` estão implementados e funcionando, incluindo os métodos HTTP principais (GET, POST, PUT, PATCH, DELETE).  
-- A validação dos dados usando o Zod está presente e bem aplicada, garantindo que o payload tenha o formato esperado.  
-- O tratamento de erros com a classe `ApiError` e o middleware `errorHandler` está funcionando, retornando status codes 400 e 404 nos momentos corretos.  
-- Você também conseguiu implementar filtros simples nos seus endpoints, o que já é um ótimo passo para funcionalidades extras!  
-- Seu código está usando UUIDs corretamente para identificar agentes e casos, e a validação disso está consistente.
-
-Mandou muito bem! 👏👏👏
+Além disso, adorei ver que você implementou filtros simples para casos por status e agente, e que cuidou da validação dos dados com `zod` e das mensagens de erro personalizadas usando sua própria classe `ApiError`. Isso é um diferencial que mostra seu cuidado em entregar uma API robusta e amigável para quem for consumir. 🌟
 
 ---
 
-## 🕵️‍♀️ Agora vamos analisar alguns pontos que precisam de atenção para destravar 100% do seu potencial:
+## Vamos dar uma olhada no que pode ser melhorado para você destravar 100% do seu potencial! 🕵️‍♂️🔎
 
-### 1. Atualização completa do caso (`PUT /casos/:id`) — problema na preservação do `agente_id`
+### 1. Sobre o endpoint de busca do agente responsável pelo caso (`GET /casos/:caso_id/agente`)
 
-No arquivo `repositories/casosRepository.js`, sua função `updateCompletely` está sobrescrevendo o objeto do caso, mas mantém o `agente_id` do caso antigo, veja:
+Você implementou a rota e o controlador para buscar o agente associado a um caso, o que é ótimo! Porém, percebi que esse endpoint **não está passando nos testes de filtragem de agente por caso**. Isso pode acontecer porque, ao analisar seu código, notei que você usou o parâmetro `caso_id` na rota e no controller, o que está correto, mas talvez o teste espere que o parâmetro seja apenas `id` ou que a rota esteja com outro nome.
 
-```js
-const updateCompletely = (id, data) => {
-    const index = casos.findIndex((caso) => caso.id === id);
-    
-    if(index !== -1) {
-        casos[index] = {
-            id: id,
-            ...data,
-            agente_id: casos[index].agente_id // Mantém o agente_id antigo
-        };
-
-        return casos[index];
-    }
-
-    return null;
-};
-```
-
-O problema é que, no seu controller, ao atualizar completamente o caso, você espera que o `agente_id` possa ser alterado também, mas aqui você está forçando a manter o antigo, o que pode causar inconsistência (o cliente envia um novo `agente_id` e ele é ignorado).
-
-**Como resolver?**  
-
-Permita que o `agente_id` seja atualizado junto com os outros campos, desde que seja válido e exista. Para isso, remova a linha que força o `agente_id` antigo e garanta que a validação no controller impeça IDs inválidos. Assim:
+**Dica importante:** Confira se a rota está registrada exatamente como esperado pelo desafio, pois uma pequena diferença no nome do parâmetro pode fazer a API não responder corretamente.
 
 ```js
-const updateCompletely = (id, data) => {
-    const index = casos.findIndex((caso) => caso.id === id);
-    
-    if(index !== -1) {
-        casos[index] = {
-            id: id,
-            ...data // Agora agente_id pode vir aqui do data
-        };
-
-        return casos[index];
-    }
-
-    return null;
-};
+// Seu código na rota:
+router.get('/:caso_id/agente', controller.getAgenteByCasoId);
 ```
 
-No seu controller `updateCompletelyCaso`, certifique-se de validar `agente_id` se ele estiver presente no corpo da requisição. Caso contrário, a atualização pode aceitar um `agente_id` inválido ou inexistente.
+Se o desafio espera o parâmetro como `id`, o correto seria:
+
+```js
+router.get('/:id/agente', controller.getAgenteByCasoId);
+```
+
+E no controller, você ajustaria para:
+
+```js
+const { id } = req.params;
+// usar 'id' para buscar o caso
+```
+
+Essa atenção aos detalhes de nomenclatura é crucial para que a API funcione como esperado.
 
 ---
 
-### 2. Atualização parcial do caso (`PATCH /casos/:id`) — falta de validação do `agente_id`
+### 2. Sobre a busca por palavras-chave em casos (`GET /casos/search?q=...`)
 
-No controller `partiallyUpdateCaso`, você aceita o payload parcial e atualiza o caso, mas não está validando se o `agente_id` enviado (se enviado) é um UUID válido e se o agente realmente existe:
+Você implementou o endpoint `GET /casos/search` para buscar casos pelo termo no título ou descrição, o que é um bônus muito legal! 🎉
+
+Porém, percebi um detalhe que pode estar atrapalhando o funcionamento correto:
+
+No filtro, você faz:
 
 ```js
-const parciallyData = casosSchema.partial().parse(req.body);
-const updated = casosRepository.partiallyUpdate(id, parciallyData);
+casos = casos.filter(caso => 
+    caso.titulo.includes(term) || caso.descricao.includes(term)
+);
 ```
 
-**Por que isso é importante?**  
+Mas você esqueceu de transformar os campos `titulo` e `descricao` em lowercase antes de comparar, o que pode causar falhas na busca case-insensitive.
 
-Se alguém quiser mudar o agente responsável pelo caso, você precisa garantir que o novo `agente_id` seja válido e que o agente exista, senão a API vai aceitar dados inconsistentes.
-
-**Como corrigir?**  
-
-Antes de atualizar, faça:
+**Como melhorar:**
 
 ```js
-if (parciallyData.agente_id) {
-    if (!isValidUuid(parciallyData.agente_id)) {
-        return next(new ApiError('ID de agente inválido.', 400));
-    }
-    const agenteExists = agentesRepository.findById(parciallyData.agente_id);
-    if (!agenteExists) {
-        return next(new ApiError('Agente não encontrado para associar ao caso.', 404));
+casos = casos.filter(caso => 
+    caso.titulo.toLowerCase().includes(term) || 
+    caso.descricao.toLowerCase().includes(term)
+);
+```
+
+Assim, a busca será feita sem se importar com maiúsculas/minúsculas, garantindo que o filtro funcione corretamente.
+
+---
+
+### 3. Sobre filtragem e ordenação de agentes por data de incorporação
+
+Você já implementou o filtro por cargo e ordenação simples na listagem de agentes, o que é ótimo! Porém, os testes indicam que a filtragem por data de incorporação com ordenação crescente e decrescente não está funcionando como esperado.
+
+No seu controller (`agentesController.js`), percebi que você está tentando ordenar agentes com base em um campo passado na query, mas talvez o campo `dataDeIncorporacao` não esteja sendo tratado corretamente para ordenação.
+
+Veja seu trecho:
+
+```js
+if(sort) {
+    const isDesc = sort.startsWith('-');
+    const field = isDesc ? sort.slice(1) : sort;
+
+    agentes = agentes.sort((a, b) => {
+        const dateA = new Date(a[field]);
+        const dateB = new Date(b[field]);
+
+        return isDesc ? dateB - dateA : dateA - dateB;
+    });
+}
+```
+
+Esse código está correto para ordenar datas, mas para garantir o funcionamento, é importante validar se o campo `field` realmente existe nos agentes e se o formato da data é sempre consistente (no seu caso, strings no formato ISO, o que é ótimo).
+
+**Sugestão para robustez:**
+
+- Confirme que o campo de ordenação recebido via query é exatamente `dataDeIncorporacao`.
+- Garanta que o campo `cargo` usado no filtro seja tratado em lowercase para evitar problemas.
+
+Exemplo de ajuste para o filtro:
+
+```js
+if(cargo) {
+    agentes = agentes.filter(agente => 
+        agente.cargo.toLowerCase() === cargo.toLowerCase()
+    );
+}
+```
+
+E para ordenação, talvez restringir a ordenar apenas por campos esperados:
+
+```js
+const validSortFields = ['dataDeIncorporacao', 'nome', 'cargo'];
+if(sort) {
+    const isDesc = sort.startsWith('-');
+    const field = isDesc ? sort.slice(1) : sort;
+
+    if(validSortFields.includes(field)) {
+        agentes = agentes.sort((a, b) => {
+            if(field === 'dataDeIncorporacao') {
+                const dateA = new Date(a[field]);
+                const dateB = new Date(b[field]);
+                return isDesc ? dateB - dateA : dateA - dateB;
+            } else {
+                // ordenar strings
+                return isDesc 
+                    ? b[field].localeCompare(a[field]) 
+                    : a[field].localeCompare(b[field]);
+            }
+        });
     }
 }
 ```
 
-Assim, você mantém a integridade dos dados.
-
 ---
 
-### 3. Atualização completa do agente (`PUT /agentes/:id`) e parcial (`PATCH /agentes/:id`)
+### 4. Sobre mensagens de erro customizadas para IDs inválidos
 
-Aqui seu código está muito bom, com validação do UUID, uso do Zod para validar o payload e tratamento correto de erros. Parabéns! Só uma pequena observação: no método `partiallyUpdateAgente` você tem um typo na variável `parciallyData` (faltou o "t" em "partially"). Não é um erro funcional, mas vale corrigir para manter a clareza:
+Você fez um ótimo trabalho ao validar os UUIDs usando `isValidUuid()` e retornar erros com status 400 e mensagens personalizadas, porém, em alguns pontos, as mensagens de erro padrão do `zod` podem estar sendo repassadas diretamente, o que pode gerar respostas genéricas.
+
+Por exemplo, no catch dos seus controllers, você faz:
 
 ```js
-const partiallyData = agentesSchema.partial().parse(req.body);
+catch (error) {
+    next(new ApiError(error.message, 400));
+}
 ```
 
----
+Isso pode funcionar, mas para dar um feedback ainda melhor ao cliente da API, você pode capturar os erros do `zod` e formatá-los para retornar um objeto com detalhes dos campos inválidos.
 
-### 4. Filtros e buscas avançadas (bônus)
-
-Notei que você tentou implementar filtros e buscas, mas alguns testes bônus falharam. Isso indica que a funcionalidade está incompleta ou com detalhes faltando.  
-
-**Dica:** Para implementar filtros e ordenações, você pode usar os parâmetros de query (`req.query`) nas rotas `GET /casos` e `GET /agentes`. Por exemplo:
+Exemplo simples para melhorar a resposta:
 
 ```js
-// Exemplo de filtro simples por status no controller de casos
-const getCasos = (req, res, next) => {
-    try {
-        let casos = casosRepository.findAll();
-        const { status, agente_id, keyword } = req.query;
-
-        if (status) {
-            casos = casos.filter(caso => caso.status === status.toLowerCase());
-        }
-
-        if (agente_id) {
-            casos = casos.filter(caso => caso.agente_id === agente_id);
-        }
-
-        if (keyword) {
-            casos = casos.filter(caso => 
-                caso.titulo.includes(keyword) || caso.descricao.includes(keyword)
-            );
-        }
-
-        res.status(200).json(casos);
-    } catch (error) {
-        next(new ApiError('Erro ao listar casos.'));
+catch (error) {
+    if (error.name === 'ZodError') {
+        const errors = error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+        }));
+        return next(new ApiError('Dados inválidos', 400, errors));
     }
-};
+    next(new ApiError(error.message, 400));
+}
 ```
 
-Além disso, para ordenação por data de incorporação no agente, você pode usar o método `.sort()` do JavaScript.
+Assim, sua API fica mais amigável e ajuda o consumidor a entender exatamente o que está errado.
 
 ---
 
-### 5. Organização e estrutura do projeto
+### 5. Organização do projeto e estrutura de arquivos
 
-Sua estrutura está ótima, com as pastas esperadas e arquivos bem distribuídos. Isso é um ponto forte que facilita a manutenção e escalabilidade.
+Sua estrutura está muito próxima do esperado e bem organizada! 🎯
+
+```
+.
+├── controllers/
+│   ├── agentesController.js
+│   └── casosController.js
+├── repositories/
+│   ├── agentesRepository.js
+│   └── casosRepository.js
+├── routes/
+│   ├── agentesRoutes.js
+│   └── casosRoutes.js
+├── utils/
+│   ├── ApiError.js
+│   ├── agentesValidation.js
+│   ├── casosValidation.js
+│   ├── errorHandler.js
+│   └── uuidValidation.js
+├── server.js
+├── package.json
+└── docs/
+    └── swagger.js
+```
+
+Está tudo certinho, parabéns! Isso facilita muito a manutenção do código e a escalabilidade.
 
 ---
 
-## 📚 Recomendações para você aprofundar e corrigir esses pontos:
+## Recursos que vão te ajudar a avançar ainda mais 🚀
 
-- Para entender melhor como validar dados em APIs Express com Zod e tratar erros:  
-  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_  
-- Para dominar o retorno correto dos status HTTP e métodos REST:  
-  https://youtu.be/RSZHvQomeKE  
-- Para aprender a manipular arrays e fazer filtros e ordenações em JavaScript:  
-  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI  
-- Para entender como usar parâmetros de query e construir filtros:  
-  https://expressjs.com/pt-br/guide/routing.html  
-- Para garantir a arquitetura MVC e organização do projeto:  
-  https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH  
+- Para entender melhor como organizar rotas e controllers no Express.js, recomendo muito este vídeo:  
+  https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH
 
----
+- Para aprofundar no tratamento de erros e validação de dados com `zod` e Express:  
+  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
 
-## 📝 Resumo dos principais pontos para focar:
+- Para garantir que suas buscas e filtros funcionem perfeitamente, veja como manipular arrays e strings em JavaScript:  
+  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI
 
-- [ ] Ajustar `updateCompletely` do caso para permitir atualização do `agente_id` e validar no controller.  
-- [ ] Validar `agente_id` no `PATCH /casos/:id` antes de atualizar parcialmente um caso.  
-- [ ] Corrigir typo em `partiallyUpdateAgente` para manter clareza no código.  
-- [ ] Implementar filtros e ordenações nos endpoints `GET /casos` e `GET /agentes` usando `req.query`.  
-- [ ] Continuar mantendo a organização do seu projeto, que já está muito boa!  
+- Para reforçar o entendimento do protocolo HTTP e status codes, super importante para APIs REST:  
+  https://youtu.be/RSZHvQomeKE
 
 ---
 
-Yasmine, você está no caminho certo e já construiu uma base sólida! 🚀 Com esses ajustes que conversamos, sua API vai ficar ainda mais robusta e pronta para o uso real. Continue firme, revisando, testando e aprendendo. Se precisar, volte aqui que estou sempre pronto para ajudar! 💪✨
+## Resumo rápido para você focar:
 
-Boa codificação e até a próxima! 👩‍💻👨‍💻❤️
+- ⚠️ Ajustar o nome do parâmetro na rota `GET /casos/:caso_id/agente` para corresponder exatamente ao esperado (possivelmente usar `:id`).
+- ⚠️ Corrigir a busca por palavras-chave para usar `.toLowerCase()` nos campos `titulo` e `descricao`.
+- ⚠️ Revisar a filtragem e ordenação de agentes por `dataDeIncorporacao`, garantindo que o campo seja tratado corretamente e que o filtro por cargo seja case-insensitive.
+- ⚠️ Melhorar o tratamento das mensagens de erro do `zod` para retornar respostas mais claras e detalhadas ao cliente da API.
+- ✅ Continuar mantendo a organização do projeto e a modularização das rotas, controllers e repositories.
+
+---
+
+Yasmine, seu projeto está muito bem encaminhado, e com esses ajustes você vai atingir um nível ainda mais profissional! 👏 Continue assim, aprendendo e aprimorando suas habilidades. Estou torcendo por você! 💪✨
+
+Se precisar de mais ajuda, é só chamar. Vamos juntos nessa jornada! 🚀
+
+Abraços do seu Code Buddy! 🤖💙
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
