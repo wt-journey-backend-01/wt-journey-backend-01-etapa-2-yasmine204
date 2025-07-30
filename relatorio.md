@@ -1,241 +1,194 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 9 créditos restantes para usar o sistema de feedback AI.
+Você tem 8 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para yasmine204:
 
-Nota final: **46.3/100**
+Nota final: **63.6/100**
 
-Olá, Yasmine! 👋✨
-
-Antes de mais nada, quero parabenizar você pelo esforço e pela estruturação do seu projeto! 🎉 Sua organização em pastas está alinhada com o que esperamos para um projeto Express.js modular e escalável, e isso já é um grande passo para construir APIs robustas. Além disso, vi que você implementou todos os métodos HTTP principais (GET, POST, PUT, PATCH, DELETE) para os recursos `/agentes` e `/casos`, o que é excelente! 👏
-
-Também percebi que você já fez um bom trabalho ao criar classes de erro personalizadas (`ApiError`), usar schemas de validação com `zod` e aplicar middlewares para tratamento de erros — isso mostra que você está no caminho certo para construir uma API confiável e fácil de manter. Além disso, você conseguiu implementar alguns filtros e buscas extras (bônus), o que demonstra seu empenho em ir além do básico! 🌟
+Olá, Yasmine! 👋✨ Que alegria poder revisar seu código e te ajudar a avançar ainda mais nesse desafio da API para o Departamento de Polícia! 🚓💻
 
 ---
 
-## Vamos analisar alguns pontos importantes para aprimorar seu código e destravar funcionalidades essenciais! 🔍🛠️
+## 🎉 Primeiramente, parabéns pelos seus acertos!
 
-### 1. Validação e Integridade dos Dados — A Base de Tudo!
+- Você estruturou seu projeto muito bem, com pastas claras para `controllers`, `routes`, `repositories` e `utils`. Isso é fundamental para um código organizado e de fácil manutenção.  
+- Os endpoints básicos para `/agentes` e `/casos` estão implementados e funcionando, incluindo os métodos HTTP principais (GET, POST, PUT, PATCH, DELETE).  
+- A validação dos dados usando o Zod está presente e bem aplicada, garantindo que o payload tenha o formato esperado.  
+- O tratamento de erros com a classe `ApiError` e o middleware `errorHandler` está funcionando, retornando status codes 400 e 404 nos momentos corretos.  
+- Você também conseguiu implementar filtros simples nos seus endpoints, o que já é um ótimo passo para funcionalidades extras!  
+- Seu código está usando UUIDs corretamente para identificar agentes e casos, e a validação disso está consistente.
 
-Vi que você está usando `zod` para validar os dados dos agentes e casos, o que é ótimo! Porém, alguns problemas de validação mais cruciais ainda estão acontecendo, e eles impactam diretamente a qualidade da sua API:
+Mandou muito bem! 👏👏👏
 
-- **Permitir criar agentes com `nome` vazio ou `dataDeIncorporacao` no futuro**  
-  Isso indica que seu schema de validação não está cobrindo essas regras essenciais. Por exemplo, no arquivo `utils/agentesValidation.js` (que não foi enviado, mas é onde imagino que esteja seu schema), você precisa garantir que:
-  - O campo `nome` seja obrigatório e não vazio (ex: `.min(1, "Nome é obrigatório")`).
-  - A `dataDeIncorporacao` seja uma data válida e que não seja maior que a data atual (não pode ser no futuro).
+---
 
-- **Permitir criar casos com `titulo` ou `descricao` vazios**  
-  O mesmo vale para o schema de casos (`casosValidation.js`): títulos e descrições devem ser obrigatórios e não vazios, garantindo que a API não aceite dados incompletos.
+## 🕵️‍♀️ Agora vamos analisar alguns pontos que precisam de atenção para destravar 100% do seu potencial:
 
-- **Permitir criar casos com `agente_id` inexistente**  
-  No seu repositório de casos (`casosRepository.js`), ao criar um novo caso, você está gerando um novo `agente_id` com `uuidv4()` automaticamente, sem validar se esse agente existe. Isso não está correto, porque cada caso precisa estar associado a um agente válido existente!  
-  Isso gera um problema grave de integridade referencial — a API está aceitando casos vinculados a agentes que não existem de fato.
+### 1. Atualização completa do caso (`PUT /casos/:id`) — problema na preservação do `agente_id`
 
-**Como melhorar?**
-
-- Para validação de campos obrigatórios e regras mais complexas, ajuste seus schemas `zod` para incluir essas regras. Por exemplo, para o nome do agente:
+No arquivo `repositories/casosRepository.js`, sua função `updateCompletely` está sobrescrevendo o objeto do caso, mas mantém o `agente_id` do caso antigo, veja:
 
 ```js
-const agentesSchema = z.object({
-  nome: z.string().min(1, "Nome é obrigatório"),
-  dataDeIncorporacao: z.string()
-    .refine(dateStr => new Date(dateStr) <= new Date(), {
-      message: "Data de incorporação não pode ser no futuro"
-    }),
-  cargo: z.enum(['delegado', 'investigadora', 'escrivão'])
-});
-```
+const updateCompletely = (id, data) => {
+    const index = casos.findIndex((caso) => caso.id === id);
+    
+    if(index !== -1) {
+        casos[index] = {
+            id: id,
+            ...data,
+            agente_id: casos[index].agente_id // Mantém o agente_id antigo
+        };
 
-- Para garantir que o `agente_id` de um caso exista, no controller `createCaso` você deve receber o `agente_id` no corpo da requisição e validar se ele existe no repositório de agentes antes de criar o caso. Algo assim:
-
-```js
-const createCaso = (req, res, next) => {
-  try {
-    const { titulo, descricao, status, agente_id } = req.body;
-
-    // Validação básica do agente_id
-    if (!isValidUuid(agente_id)) {
-      return next(new ApiError('ID de agente inválido.', 400));
+        return casos[index];
     }
 
-    // Verificar se o agente existe
-    const agenteExiste = agentesRepository.findById(agente_id);
-    if (!agenteExiste) {
-      return next(new ApiError('Agente não encontrado para associar ao caso.', 404));
+    return null;
+};
+```
+
+O problema é que, no seu controller, ao atualizar completamente o caso, você espera que o `agente_id` possa ser alterado também, mas aqui você está forçando a manter o antigo, o que pode causar inconsistência (o cliente envia um novo `agente_id` e ele é ignorado).
+
+**Como resolver?**  
+
+Permita que o `agente_id` seja atualizado junto com os outros campos, desde que seja válido e exista. Para isso, remova a linha que força o `agente_id` antigo e garanta que a validação no controller impeça IDs inválidos. Assim:
+
+```js
+const updateCompletely = (id, data) => {
+    const index = casos.findIndex((caso) => caso.id === id);
+    
+    if(index !== -1) {
+        casos[index] = {
+            id: id,
+            ...data // Agora agente_id pode vir aqui do data
+        };
+
+        return casos[index];
     }
 
-    const dataReceived = {
-      titulo,
-      descricao,
-      status: status.toLowerCase(),
-      agente_id
-    };
-
-    const data = casosSchema.parse(dataReceived);
-    const newCaso = repository.create(data);
-
-    res.status(201).json(newCaso);
-  } catch (error) {
-    next(new ApiError(error.message, 400));
-  }
+    return null;
 };
 ```
 
-Note que no seu `casosRepository.js`, o método `create` está adicionando um `agente_id` novo com `uuidv4()` automaticamente, o que não é correto. Você deve aceitar o `agente_id` passado pelo controller:
+No seu controller `updateCompletelyCaso`, certifique-se de validar `agente_id` se ele estiver presente no corpo da requisição. Caso contrário, a atualização pode aceitar um `agente_id` inválido ou inexistente.
+
+---
+
+### 2. Atualização parcial do caso (`PATCH /casos/:id`) — falta de validação do `agente_id`
+
+No controller `partiallyUpdateCaso`, você aceita o payload parcial e atualiza o caso, mas não está validando se o `agente_id` enviado (se enviado) é um UUID válido e se o agente realmente existe:
 
 ```js
-const create = (data) => {
-  const newCaso = {
-    id: uuidv4(),
-    ...data
-  };
+const parciallyData = casosSchema.partial().parse(req.body);
+const updated = casosRepository.partiallyUpdate(id, parciallyData);
+```
 
-  casos.push(newCaso);
-  return newCaso;
-};
+**Por que isso é importante?**  
+
+Se alguém quiser mudar o agente responsável pelo caso, você precisa garantir que o novo `agente_id` seja válido e que o agente exista, senão a API vai aceitar dados inconsistentes.
+
+**Como corrigir?**  
+
+Antes de atualizar, faça:
+
+```js
+if (parciallyData.agente_id) {
+    if (!isValidUuid(parciallyData.agente_id)) {
+        return next(new ApiError('ID de agente inválido.', 400));
+    }
+    const agenteExists = agentesRepository.findById(parciallyData.agente_id);
+    if (!agenteExists) {
+        return next(new ApiError('Agente não encontrado para associar ao caso.', 404));
+    }
+}
+```
+
+Assim, você mantém a integridade dos dados.
+
+---
+
+### 3. Atualização completa do agente (`PUT /agentes/:id`) e parcial (`PATCH /agentes/:id`)
+
+Aqui seu código está muito bom, com validação do UUID, uso do Zod para validar o payload e tratamento correto de erros. Parabéns! Só uma pequena observação: no método `partiallyUpdateAgente` você tem um typo na variável `parciallyData` (faltou o "t" em "partially"). Não é um erro funcional, mas vale corrigir para manter a clareza:
+
+```js
+const partiallyData = agentesSchema.partial().parse(req.body);
 ```
 
 ---
 
-### 2. Atualização e Proteção do Campo `id`
+### 4. Filtros e buscas avançadas (bônus)
 
-Percebi que você está permitindo que o campo `id` seja alterado em atualizações, especialmente pelo método PATCH (atualização parcial) para agentes e casos. Isso não é desejável, pois o `id` deve ser imutável para garantir a integridade dos dados.
+Notei que você tentou implementar filtros e buscas, mas alguns testes bônus falharam. Isso indica que a funcionalidade está incompleta ou com detalhes faltando.  
 
-Por exemplo, no seu controller de agentes:
-
-```js
-const partiallyUpdateAgente = (req, res, next) => {
-  // ...
-  const parciallyData = agentesSchema.partial().parse(req.body);
-  // Aqui o schema deve impedir atualização do campo 'id'
-  // ...
-};
-```
-
-**Como resolver?**
-
-- Ajuste seu schema de validação para que o campo `id` não seja aceito em payloads de criação ou atualização.
-- Ou, no controller, antes de chamar o schema, remova o campo `id` do objeto `req.body` se existir, para evitar que o usuário tente alterar o ID.
-
-Exemplo simples para ignorar `id` no PATCH:
+**Dica:** Para implementar filtros e ordenações, você pode usar os parâmetros de query (`req.query`) nas rotas `GET /casos` e `GET /agentes`. Por exemplo:
 
 ```js
-const { id, ...rest } = req.body;
-const parciallyData = agentesSchema.partial().parse(rest);
-```
-
----
-
-### 3. Tratamento de Status Codes e Mensagens de Erro
-
-Você está usando corretamente os status codes 200, 201, 204, 400 e 404 na maioria dos casos, o que é ótimo! 👍 Porém, notei pequenos deslizes que podem ser aprimorados para deixar a API mais consistente e amigável:
-
-- Em alguns lugares, você retorna `404` para IDs inválidos (formato UUID errado). O ideal é retornar `400 Bad Request` para IDs mal formatados, e `404 Not Found` para IDs formatados corretamente mas que não existem no banco.
-
-Por exemplo, no `getCasoById`:
-
-```js
-if(!isValidUuid(id)) {
-  return next(new ApiError('ID inválido.', 404)); // aqui seria melhor 400
-}
-```
-
-- No método `updateCompletelyAgente`, você tem:
-
-```js
-if(!updated) {
-  return next(ApiError('Agente não encontrado', 400)); // Esqueceu o 'new' e o status está 400
-}
-```
-
-O correto seria:
-
-```js
-if(!updated) {
-  return next(new ApiError('Agente não encontrado', 404));
-}
-```
-
----
-
-### 4. Implementação dos Filtros e Busca Bônus
-
-Vi que você tentou implementar filtros para busca de casos por status, agentes responsáveis, keywords, e ordenação de agentes pela data de incorporação, mas aparentemente eles não estão funcionando corretamente.
-
-Como esses filtros exigem lógica extra no controller e no repositório, minha suspeita é que eles não foram implementados ou estão incompletos, pois não encontrei nenhum código que trate query params para filtragem.
-
-Para destravar essas funcionalidades, você precisa:
-
-- No controller, capturar os parâmetros de query (ex: `req.query.status`, `req.query.agente_id`, `req.query.keyword`, `req.query.sort`) e passar para o repositório uma função que filtre os dados em memória.
-- No repositório, implementar funções que filtrem o array de agentes ou casos conforme os parâmetros recebidos.
-
-Exemplo simples para filtrar casos por status:
-
-```js
+// Exemplo de filtro simples por status no controller de casos
 const getCasos = (req, res, next) => {
-  try {
-    let casos = repository.findAll();
-    const { status } = req.query;
+    try {
+        let casos = casosRepository.findAll();
+        const { status, agente_id, keyword } = req.query;
 
-    if (status) {
-      casos = casos.filter(caso => caso.status === status.toLowerCase());
+        if (status) {
+            casos = casos.filter(caso => caso.status === status.toLowerCase());
+        }
+
+        if (agente_id) {
+            casos = casos.filter(caso => caso.agente_id === agente_id);
+        }
+
+        if (keyword) {
+            casos = casos.filter(caso => 
+                caso.titulo.includes(keyword) || caso.descricao.includes(keyword)
+            );
+        }
+
+        res.status(200).json(casos);
+    } catch (error) {
+        next(new ApiError('Erro ao listar casos.'));
     }
-
-    res.status(200).json(casos);
-  } catch (error) {
-    next(new ApiError('Erro ao listar casos.'));
-  }
 };
 ```
 
----
-
-### 5. Pequenos Detalhes que Podem Melhorar a Manutenibilidade
-
-- No seu controller, você repetiu a função `isValidUuid` em ambos os arquivos (`agentesController.js` e `casosController.js`). Para evitar duplicação, crie essa função em um arquivo utilitário e importe onde precisar.
-
-- No seu middleware de erro (`errorHandler.js`), garanta que ele envie o status correto e uma mensagem clara para o cliente, usando as propriedades da sua classe `ApiError`.
+Além disso, para ordenação por data de incorporação no agente, você pode usar o método `.sort()` do JavaScript.
 
 ---
 
-## Recursos que vão te ajudar a aprimorar esses pontos:
+### 5. Organização e estrutura do projeto
 
-- Para entender melhor **validação de dados em APIs Node.js/Express** com `zod`:  
+Sua estrutura está ótima, com as pastas esperadas e arquivos bem distribuídos. Isso é um ponto forte que facilita a manutenção e escalabilidade.
+
+---
+
+## 📚 Recomendações para você aprofundar e corrigir esses pontos:
+
+- Para entender melhor como validar dados em APIs Express com Zod e tratar erros:  
   https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_  
-
-- Para aprofundar no **tratamento correto de status HTTP 400 e 404**:  
-  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400  
-  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404  
-
-- Para aprender a organizar as rotas e middlewares corretamente no Express:  
+- Para dominar o retorno correto dos status HTTP e métodos REST:  
+  https://youtu.be/RSZHvQomeKE  
+- Para aprender a manipular arrays e fazer filtros e ordenações em JavaScript:  
+  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI  
+- Para entender como usar parâmetros de query e construir filtros:  
   https://expressjs.com/pt-br/guide/routing.html  
-
-- Para entender a arquitetura MVC em Node.js e organizar controllers, rotas e repositórios:  
+- Para garantir a arquitetura MVC e organização do projeto:  
   https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH  
 
-- Para manipular arrays e fazer filtragens em memória de forma eficiente:  
-  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI  
+---
+
+## 📝 Resumo dos principais pontos para focar:
+
+- [ ] Ajustar `updateCompletely` do caso para permitir atualização do `agente_id` e validar no controller.  
+- [ ] Validar `agente_id` no `PATCH /casos/:id` antes de atualizar parcialmente um caso.  
+- [ ] Corrigir typo em `partiallyUpdateAgente` para manter clareza no código.  
+- [ ] Implementar filtros e ordenações nos endpoints `GET /casos` e `GET /agentes` usando `req.query`.  
+- [ ] Continuar mantendo a organização do seu projeto, que já está muito boa!  
 
 ---
 
-## Resumo dos Principais Pontos para Focar 🚦
+Yasmine, você está no caminho certo e já construiu uma base sólida! 🚀 Com esses ajustes que conversamos, sua API vai ficar ainda mais robusta e pronta para o uso real. Continue firme, revisando, testando e aprendendo. Se precisar, volte aqui que estou sempre pronto para ajudar! 💪✨
 
-- **Corrigir validações nos schemas para impedir dados inválidos** (nomes vazios, datas no futuro, títulos vazios, etc).
-- **Garantir que o `agente_id` passado ao criar um caso exista no repositório de agentes**.
-- **Impedir atualização do campo `id` em agentes e casos, especialmente em PATCH**.
-- **Ajustar status codes para 400 em IDs mal formatados e 404 para IDs inexistentes**.
-- **Implementar corretamente os filtros e buscas extras nos endpoints, usando query params e filtragem em memória**.
-- **Evitar duplicação de funções utilitárias, como validação de UUID**.
-- **Revisar mensagens de erro e tratamento no middleware para enviar respostas claras e apropriadas**.
-
----
-
-Yasmine, você já está com uma base muito sólida e um código bem organizado, isso é fundamental para continuar crescendo! 🚀 Com esses ajustes, sua API vai ficar muito mais robusta, confiável e alinhada com as boas práticas do mercado.
-
-Continue firme, pois o caminho para dominar Node.js e Express.js é feito de pequenos passos e muita prática! Sempre que precisar, volte aos recursos que te indiquei para reforçar o aprendizado. Estou aqui torcendo pelo seu sucesso! 💪🔥
-
-Um abraço virtual e até a próxima revisão! 🤗👩‍💻✨
+Boa codificação e até a próxima! 👩‍💻👨‍💻❤️
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
