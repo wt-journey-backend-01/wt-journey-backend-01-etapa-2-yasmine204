@@ -1,23 +1,12 @@
-const repository = require('../repositories/casosRepository');
+const casosRepository = require('../repositories/casosRepository');
+const agentesRepository = require('../repositories/agentesRepository');
 const { casosSchema } = require('../utils/casosValidation');
-
-class ApiError extends Error {
-    constructor(message, statusCode = 500, errors = []) {
-        super(message);
-        this.name = 'ApiError';
-        this.statusCode = statusCode;
-        this.errors = errors;
-    }
-}
-
-function isValidUuid(id) {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(id);
-}
+const isValidUuid = require('../utils/uuidValidation');
+const ApiError = require('../utils/ApiError');
 
 const getCasos = (req, res, next) => {
     try {
-        const casos = repository.findAll();
+        const casos = casosRepository.findAll();
         
         res.status(200).json(casos);
     }
@@ -31,10 +20,10 @@ const getCasoById = (req, res, next) => {
         const { id } = req.params;
 
         if(!isValidUuid(id)) {
-            return next(new ApiError('ID inválido.', 404));
+            return next(new ApiError('ID inválido.', 400));
         }
 
-        const caso = repository.findById(id);
+        const caso = casosRepository.findById(id);
 
         if(!caso) {
             return next(new ApiError('Caso não encontrado.', 404));
@@ -49,14 +38,26 @@ const getCasoById = (req, res, next) => {
 
 const createCaso = (req, res, next) => {
     try {
-        const { titulo, descricao, status } = req.body;
+        const { titulo, descricao, status, agente_id } = req.body;
+
+        if(!isValidUuid(agente_id)) {
+            return next(new ApiError('ID de agente inválido.', 400));
+        }
+
+        const agenteExists = agentesRepository.findById(agente_id);
+        if(!agenteExists) {
+            return next(new ApiError('Agente não encontrado para associar ao caso.', 404))
+        }
+
         const dataReceived = {
             titulo,
             descricao,
-            status: status.toLowerCase()
+            status: status.toLowerCase(), 
+            agente_id
         };
+
         const data = casosSchema.parse(dataReceived);
-        const newCaso = repository.create(data);
+        const newCaso = casosRepository.create(data);
 
         res.status(201).json(newCaso);
     } 
@@ -70,11 +71,11 @@ const updateCompletelyCaso = (req, res, next) => {
         const { id } = req.params;
 
         if (!isValidUuid(id)) {
-        return next(new ApiError('ID inválido.', 404));
+        return next(new ApiError('ID inválido.', 400));
         }
 
         const data = casosSchema.parse(req.body);
-        const updated = repository.updateCompletely(id, data);
+        const updated = casosRepository.updateCompletely(id, data);
 
         if (!updated) {
             return next(new ApiError('Caso não encontrado.', 404));
@@ -92,11 +93,11 @@ const partiallyUpdateCaso = (req, res, next) => {
         const { id } = req.params;
 
         if(!isValidUuid(id)) {
-            return next(new ApiError('ID inválido.', 404));
+            return next(new ApiError('ID inválido.', 400));
         }
 
         const parciallyData = casosSchema.partial().parse(req.body);
-        const updated = repository.partiallyUpdate(id, parciallyData);
+        const updated = casosRepository.partiallyUpdate(id, parciallyData);
 
         if (!updated) {
             return next(new ApiError('Caso não encontrado.', 404));
@@ -114,10 +115,10 @@ const deleteCaso = (req, res, next) => {
         const { id } = req.params;
 
         if (!isValidUuid(id)) {
-            return next(new ApiError('ID inválido.', 404));
+            return next(new ApiError('ID inválido.', 400));
         }
 
-        const deleted = repository.remove(id);
+        const deleted = casosRepository.remove(id);
 
         if (!deleted) {
             return next(new ApiError('Caso não encontrado.', 404));

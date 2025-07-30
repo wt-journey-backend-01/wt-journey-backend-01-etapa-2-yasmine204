@@ -32,7 +32,6 @@ const create = (data) => {
     const newCaso = {
         id: uuidv4(),
         ...data,
-        agente_id: uuidv4()
     };
     
     casos.push(newCaso);
@@ -69,7 +68,7 @@ const partiallyUpdate = (id, data) => {
 
 const remove = (id) => {
     const index = casos.findIndex((caso) => caso.id === id);
-    
+
     if(index !== -1) {
         casos.splice(index, 1);
 
