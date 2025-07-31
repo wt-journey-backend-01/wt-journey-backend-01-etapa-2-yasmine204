@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/casosController');
 
-//router.get('/search', controller.searchCasos);
-
 router.get('/', controller.getCasos);
 router.get('/:id', controller.getCasoById);
 router.post('/', controller.createCaso);

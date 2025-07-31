@@ -18,11 +18,11 @@ const getCasos = (req, res, next) => {
             casos = casos.filter(caso => caso.status.toLowerCase() === status.toLowerCase());
         }
 
-        if(q) {
+        if (q && q.trim() !== '') {
             const term = q.toLowerCase();
-            casos = casos.filter(caso =>
-                caso.titulo.toLowerCase().includes(term) || 
-                caso.descricao.toLowerCase().includes(term)
+            casos = casos.filter(c =>
+                c.titulo.toLowerCase().includes(term) ||
+                c.descricao.toLowerCase().includes(term)
             );
         }
 
@@ -126,18 +126,18 @@ const partiallyUpdateCaso = (req, res, next) => {
 
         const partiallyData = casosSchema.partial().parse(req.body);
 
-        if('agente_id' in parciallyData) {
-            if(!isValidUuid(parciallyData.agente_id)) {
+        if('agente_id' in partiallyData) {
+            if(!isValidUuid(partiallyData.agente_id)) {
                 return next(new ApiError('ID de agente inválido', 400));
             }
 
-            const agenteExists = agentesRepository.findById(parciallyData.agente_id);
+            const agenteExists = agentesRepository.findById(partiallyData.agente_id);
             if(!agenteExists) {
                 return next(new ApiError('Agente não encontrado para associar ao caso.', 404))
             }
         }
 
-        const updated = casosRepository.partiallyUpdate(id, parciallyData);
+        const updated = casosRepository.partiallyUpdate(id, partiallyData);
 
         if (!updated) {
             return next(new ApiError('Caso não encontrado.', 404));
@@ -199,26 +199,6 @@ const getAgenteByCasoId = (req, res, next) => {
     }
 };
 
-/*const searchCasos = (req, res, next) => {
-    try {
-        let casos = casosRepository.findAll();
-        const { q } = req.query;
-
-        if(q) {
-            const term = q.toLowerCase();
-            casos = casos.filter(caso => 
-                caso.titulo.toLowerCase().includes(term) || 
-                caso.descricao.toLowerCase().includes(term)
-            );
-        }
-
-        res.status(200).json(casos);
-    } 
-    catch (error) {
-        next(new ApiError(error.message, 400));
-    }
-};*/
-
 module.exports = {
     getCasos,
     getCasoById,
@@ -227,5 +207,4 @@ module.exports = {
     partiallyUpdateCaso,
     deleteCaso,
     getAgenteByCasoId
-    //searchCasos
 }
