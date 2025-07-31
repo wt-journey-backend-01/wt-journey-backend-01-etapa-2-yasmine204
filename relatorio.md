@@ -1,24 +1,33 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 2 créditos restantes para usar o sistema de feedback AI.
+Você tem 1 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para yasmine204:
 
 Nota final: **68.1/100**
 
-# Feedback para você, Yasmine204! 🚓✨
+# Feedback para a yasmine204 🚨👮‍♀️
 
-Olá, Yasmine! Antes de tudo, quero te parabenizar pelo esforço e pela organização do seu projeto! 🎉 Você estruturou seu código com clareza, separando bem as responsabilidades em **routes**, **controllers** e **repositories**, e isso é essencial para manter um código escalável e fácil de entender. Seu uso do `express.Router()` está correto, e a integração com o Swagger para documentação está muito bem feita — isso mostra um cuidado extra que vai facilitar demais a vida de quem for consumir sua API. 👏
-
-Além disso, você implementou corretamente os endpoints básicos para os recursos `/agentes` e `/casos`, e o tratamento de erros com mensagens personalizadas já está presente em boa parte do código, o que é ótimo para a experiência do usuário da API. Também vi que você conseguiu implementar filtros simples nos casos e agentes, como filtragem por status, agente e cargo, e ordenação por data de incorporação — isso é um bônus valioso! 🌟
+Olá, Yasmine! Que jornada incrível você está fazendo ao construir essa API para o Departamento de Polícia! 🚀 Antes de tudo, quero parabenizar pelo empenho e pela organização geral do seu código. Você estruturou muito bem seus arquivos em controllers, routes, repositories e utils, o que é fundamental para um projeto escalável e fácil de manter. 👏👏
 
 ---
 
-## Vamos conversar sobre os pontos que podem ser melhorados para você avançar ainda mais? 🕵️‍♀️🔍
+## 🎉 Pontos Fortes que Merecem Destaque
 
-### 1. Endpoint para buscar o agente responsável pelo caso (`GET /casos/:id/agente`) — o bônus que está faltando brilhar ✨
+- **Estrutura Modular:** Seu projeto está muito bem dividido entre rotas, controladores e repositórios. Isso mostra que você entendeu a importância da arquitetura MVC para APIs Node.js.  
+- **Validações e Tratamento de Erros:** Você usou o `zod` para validar os dados e criou um `ApiError` para padronizar os erros, o que é excelente para manter o código limpo e os retornos consistentes.  
+- **Filtros e Ordenação:** Implementou filtros nos endpoints de agentes e casos, além da ordenação por campos específicos. Isso é um bônus muito legal e demonstra que você sabe ir além do básico!  
+- **Swagger:** A documentação está presente e organizada, o que ajuda muito na manutenção e uso da API.  
 
-Vi que você criou a rota e o controller para esse endpoint, o que é ótimo! Porém, notei que no seu controller `getAgenteByCasoId` há alguns detalhes que podem estar impedindo o funcionamento correto desse recurso:
+Parabéns por esses avanços! 🎉
+
+---
+
+## 🕵️‍♂️ Análise Profunda dos Pontos que Precisam de Atenção
+
+### 1. Endpoint para buscar o agente responsável por um caso (`GET /casos/:id/agente`)
+
+Você implementou a rota e o controlador para esse endpoint, e a lógica está correta:
 
 ```js
 const getAgenteByCasoId = (req, res, next) => {
@@ -34,9 +43,6 @@ const getAgenteByCasoId = (req, res, next) => {
             return next(new ApiError('Caso não encontrado.', 404));
         }
 
-        console.log('Caso encontrado', caso);
-        console.log('Agente buscado', caso.agente);
-
         const agente = agentesRepository.findById(caso.agente_id);
         if(!agente) {
             return next(new ApiError('Agente não encontrado.', 404));
@@ -50,32 +56,52 @@ const getAgenteByCasoId = (req, res, next) => {
 };
 ```
 
-- **O que pode estar acontecendo?**  
-  Os `console.log` são ótimos para debug, mas eles não afetam a resposta. O problema pode estar no fato de que você está buscando o agente pelo `caso.agente_id` corretamente, mas o teste bônus que falhou indica que talvez a requisição não esteja retornando o agente corretamente ou o formato da resposta não esteja como esperado.
+Porém, percebi que o teste de filtro para esse endpoint não passou. Isso pode estar relacionado a algum detalhe na rota ou no retorno. Dê uma atenção especial para:
 
-- **Sugestão:**  
-  Certifique-se que o agente retornado está completo e que não há erros silenciosos. Além disso, verifique se o `agentesRepository.findById` está funcionando corretamente (e ele parece estar, já que outros endpoints de agentes funcionam). Talvez o problema esteja na forma como o agente é serializado ou retornado.
+- **Ordem das rotas:** No arquivo `casosRoutes.js`, a rota `GET /casos/:id` está antes do `GET /casos/:id/agente`. Como o Express interpreta rotas, o parâmetro `:id` na rota anterior pode "engolir" a rota mais específica `/:id/agente`, fazendo com que ela nunca seja alcançada.
 
-- **Dica extra:**  
-  Remova os `console.log` para evitar poluição no console e foque na resposta JSON. Caso queira garantir o formato, você pode fazer algo assim:
+**Como resolver?** Mude a ordem das rotas para que a rota mais específica fique antes da rota genérica:
 
 ```js
-res.status(200).json({
-    id: agente.id,
-    nome: agente.nome,
-    dataDeIncorporacao: agente.dataDeIncorporacao,
-    cargo: agente.cargo
-});
+// Coloque esta rota ANTES da rota GET /:id
+router.get('/:id/agente', controller.getAgenteByCasoId);
+
+// Depois a rota genérica para buscar caso por ID
+router.get('/:id', controller.getCasoById);
 ```
+
+Essa simples troca faz toda a diferença no roteamento do Express! 🚦
 
 ---
 
-### 2. Filtragem de agentes por data de incorporação com ordenação (sorting) — ajuste para passar do básico para o avançado 🚀
+### 2. Filtro por keywords (`q`) no endpoint `/casos`
 
-Você implementou a ordenação para agentes no controller `getAgentes`:
+Você implementou o filtro por `q` no controller de casos:
 
 ```js
-const validSortFields = ['dataDeIncorporacao', 'nome', 'cargo'];
+if (q && q.trim() !== '') {
+    const term = q.toLowerCase();
+    casos = casos.filter(c =>
+        c.titulo.toLowerCase().includes(term) ||
+        c.descricao.toLowerCase().includes(term)
+    );
+}
+```
+
+A lógica está correta, mas para garantir que funcione perfeitamente, verifique se:
+
+- O parâmetro `q` está sendo passado corretamente na query string da requisição.  
+- O filtro está sendo aplicado antes do envio da resposta.
+
+Se estiver tudo certo, ótimo! Caso contrário, teste manualmente com exemplos para garantir que o filtro está funcionando.
+
+---
+
+### 3. Ordenação dos agentes por `dataDeIncorporacao` (asc e desc)
+
+No controller de agentes, você implementou a ordenação assim:
+
+```js
 if(sort) {
     const isDesc = sort.startsWith('-');
     const field = isDesc ? sort.slice(1) : sort;
@@ -97,19 +123,15 @@ if(sort) {
 }
 ```
 
-Isso está quase perfeito! 👏
+A ideia está ótima, mas um ponto que pode causar problema é o formato da data que você está recebendo e armazenando. Certifique-se de que os valores em `dataDeIncorporacao` estejam em um formato que o `new Date()` consiga interpretar corretamente (como `YYYY-MM-DD`). Se estiver em outro formato, a ordenação pode falhar.
 
-- **O que pode melhorar?**  
-  Certifique-se que o parâmetro `sort` está sendo passado exatamente como esperado (ex: `sort=dataDeIncorporacao` para ascendente e `sort=-dataDeIncorporacao` para descendente). Além disso, verifique se no seu teste ou cliente está enviando o parâmetro correto, porque seu código já contempla o cenário.
-
-- **Por que isso importa?**  
-  A ordenação por data é um requisito bônus que mostra domínio em manipulação de dados e query params, e seu código está bem preparado para isso! Apenas garanta que os testes/clientes estão enviando os parâmetros corretos.
+Além disso, para garantir que o filtro funcione bem, você pode adicionar um console.log para verificar os valores antes e depois da ordenação.
 
 ---
 
-### 3. Mensagens de erro customizadas para argumentos inválidos — reforçando o tratamento de erros 🛠️
+### 4. Mensagens de erro customizadas para argumentos inválidos
 
-Você já usa a classe `ApiError` para lançar erros com mensagens e status personalizados, o que é ótimo! Porém, percebi que alguns erros podem estar retornando mensagens genéricas do Zod (biblioteca de validação), como:
+Você fez um ótimo trabalho usando o `ApiError` para padronizar erros, mas percebi que em alguns pontos a mensagem pode ser genérica demais, por exemplo:
 
 ```js
 catch (error) {
@@ -117,11 +139,7 @@ catch (error) {
 }
 ```
 
-- **O que pode acontecer?**  
-  O `error.message` do Zod pode ser um texto técnico que não é amigável para o usuário da API.
-
-- **Como melhorar?**  
-  Você pode capturar o erro do Zod e formatar uma mensagem personalizada, por exemplo:
+O `error.message` do `zod` pode ser um pouco técnica. Para dar um toque mais amigável, você pode capturar os erros do `zod` e formatar uma mensagem personalizada, algo como:
 
 ```js
 catch (error) {
@@ -133,110 +151,62 @@ catch (error) {
 }
 ```
 
-Assim, o usuário da API terá mensagens claras sobre o que está errado no payload.
+Assim, quem consumir sua API terá mensagens mais claras e úteis. 😉
 
 ---
 
-### 4. Filtragem de casos por palavras-chave no título e descrição — falta um pequeno ajuste para o bônus brilhar 💡
+### 5. Pequena observação na organização do projeto
 
-No seu `getCasos`, você implementou a filtragem por palavra-chave (`q`), mas o teste bônus indica que essa parte não passou:
-
-```js
-if (q && q.trim() !== '') {
-    const term = q.toLowerCase();
-    casos = casos.filter(c =>
-        c.titulo.toLowerCase().includes(term) ||
-        c.descricao.toLowerCase().includes(term)
-    );
-}
-```
-
-- **O que pode estar acontecendo?**  
-  O código está correto e parece funcional, porém, pode ser que o teste espera que a filtragem seja mais robusta, por exemplo, ignorando acentos ou espaços extras, ou talvez o parâmetro esteja chegando com maiúsculas/minúsculas diferentes.
-
-- **Sugestão:**  
-  Você pode melhorar a normalização dos textos para evitar problemas com acentuação, usando `String.prototype.normalize`:
-
-```js
-const normalize = str => str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-if (q && q.trim() !== '') {
-    const term = normalize(q);
-    casos = casos.filter(c =>
-        normalize(c.titulo).includes(term) ||
-        normalize(c.descricao).includes(term)
-    );
-}
-```
-
-Isso ajuda a tornar a busca mais amigável e eficaz.
-
----
-
-### 5. Estrutura do projeto — você está seguindo direitinho! 🎯
-
-A estrutura do seu projeto está muito bem organizada, exatamente como esperado:
+Sua estrutura está muito próxima do esperado, parabéns! Só um detalhe para ficar atento: o arquivo `.env` é opcional, mas é uma boa prática tê-lo para gerenciar variáveis de ambiente (como a porta do servidor). Se quiser, pode criar um `.env` com:
 
 ```
-.
-├── controllers/
-│   ├── agentesController.js
-│   └── casosController.js
-├── repositories/
-│   ├── agentesRepository.js
-│   └── casosRepository.js
-├── routes/
-│   ├── agentesRoutes.js
-│   └── casosRoutes.js
-├── utils/
-│   ├── ApiError.js
-│   ├── agentesValidation.js
-│   ├── casosValidation.js
-│   ├── errorHandler.js
-│   └── uuidValidation.js
-├── docs/
-│   └── swagger.js
-├── server.js
-├── package.json
+PORT=3000
 ```
 
-Parabéns por manter a arquitetura modular e limpa! Isso é fundamental para o crescimento do seu projeto e facilita a manutenção.
+E garantir que o `dotenv` carregue corretamente. Isso ajuda muito em projetos reais!
 
 ---
 
-## Recursos para você aprimorar ainda mais 🚀
+## 📚 Recomendações de Aprendizado para Você
 
-- Para entender melhor a criação e organização de rotas no Express.js, veja este vídeo super didático:  
-  https://expressjs.com/pt-br/guide/routing.html
+Para fortalecer ainda mais seu conhecimento e corrigir os pontos mencionados, recomendo fortemente os seguintes recursos:
 
-- Para aprofundar na validação de dados e tratamento de erros personalizados com Zod e Express, recomendo este vídeo:  
-  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
+- **Sobre roteamento e ordem das rotas no Express.js:**  
+  https://expressjs.com/pt-br/guide/routing.html  
+  (Entender como o Express casa as rotas vai evitar problemas como o do `/:id` engolir rotas específicas)
 
-- Para melhorar a manipulação de arrays e filtros em JavaScript, este vídeo é excelente:  
-  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI
+- **Arquitetura MVC para Node.js:**  
+  https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH  
+  (Para aprofundar na organização do seu projeto e garantir escalabilidade)
 
-- Para entender melhor como funciona o protocolo HTTP e os códigos de status, confira:  
-  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400  
-  e  
-  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404
+- **Validação e tratamento de erros com Zod:**  
+  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_  
+  (Para melhorar a experiência do usuário da sua API com mensagens claras)
 
----
-
-## Resumo rápido dos principais pontos para focar:
-
-- **Aprimorar o endpoint `GET /casos/:id/agente`** para garantir que o agente seja retornado corretamente e com a resposta esperada.  
-- **Reforçar a filtragem por palavra-chave no recurso `/casos`**, tratando acentuação e normalização para buscas mais eficazes.  
-- **Aprimorar as mensagens de erro customizadas**, especialmente para erros de validação, para que sejam mais amigáveis e informativas.  
-- **Confirmar o uso correto do parâmetro `sort` na ordenação de agentes**, garantindo que a ordenação por data funcione perfeitamente nos dois sentidos.  
-- **Manter a ótima organização do projeto e a modularização do código**, que já estão muito bem feitas!
+- **Manipulação de arrays para filtros e ordenações:**  
+  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI  
+  (Para garantir que seus filtros e ordenações estejam sempre corretos e performáticos)
 
 ---
 
-Yasmine, você está no caminho certo e já tem uma base sólida! Com esses ajustes, sua API vai ficar ainda mais robusta, amigável e pronta para desafios maiores. Continue explorando, testando e aprimorando seu código — a prática leva à perfeição! 🚀✨
+## 📝 Resumo dos Pontos para Focar e Melhorar
 
-Se precisar de ajuda para implementar alguma dessas sugestões, é só chamar! Estou aqui para te acompanhar nessa jornada. 👩‍💻💙
+- 🔄 **Ordem das rotas:** Coloque rotas mais específicas antes das genéricas para evitar conflitos no Express.  
+- 🔍 **Filtro por keyword (`q`) no endpoint `/casos`:** Teste manualmente para garantir que está funcionando.  
+- 📅 **Ordenação por data:** Verifique o formato das datas para garantir que o `new Date()` funcione corretamente.  
+- 💬 **Mensagens de erro customizadas:** Capture erros do `zod` para retornar mensagens mais amigáveis e claras.  
+- 📂 **Variáveis de ambiente:** Considere usar um arquivo `.env` para configurações como porta do servidor.  
 
-Um abraço de Code Buddy e até a próxima revisão! 🤗👊
+---
+
+Yasmine, você está no caminho certo e tem uma base muito sólida! Corrigindo esses detalhes, sua API vai ficar ainda mais robusta e profissional. Continue explorando e aprimorando seu código, pois o aprendizado é contínuo e você está indo muito bem! 🚀✨
+
+Se precisar de mais ajuda, estarei por aqui. Boa codificação! 👩‍💻👊
+
+---
+
+Abraços virtuais,  
+Seu Code Buddy ❤️
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
