@@ -19,7 +19,7 @@ const getAgentes = (req, res, next) => {
             const field = isDesc ? sort.slice(1) : sort;
 
             if(validSortFields.includes(field)) {
-                agentes = agentes.sort((a, b) => {
+                agentes = [...agentes].sort((a, b) => {
                     if(field === 'dataDeIncorporacao') {
                         const dateA = new Date(a[field]);
                         const dateB = new Date(b[field]);
@@ -37,7 +37,7 @@ const getAgentes = (req, res, next) => {
         res.status(200).json(agentes);
     } 
     catch (error) {
-        next(new ApiError('Erro ao listar agentes.'));
+        next(new ApiError(error.message, 400));;
     }
 };
 
@@ -58,7 +58,7 @@ const getAgentesById = (req, res, next) => {
         res.status(200).json(agente);
     } 
     catch (error) {
-        next(new ApiError('Erro ao listar agente.'));
+        next(new ApiError(error.message, 400));
     }
 };
 

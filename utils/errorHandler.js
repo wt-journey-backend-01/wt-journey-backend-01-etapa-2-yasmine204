@@ -1,20 +1,6 @@
-const ApiError = require('./ApiError');
-
-const errorHandler = (err, req, res, next) => {
-    console.log(err.stack);
-
-    if (err instanceof ApiError) {
-        return res.status(err.statusCode).json({
-            status: 'error',
-            message: err.message,
-            errors: err.errors || []
-        });
-    }
-    
-    res.status(500).json({
-        status: 'error',
-        message: 'Erro interno no servidor.'
-    });
-};
+function errorHandler(err, req, res, next) {
+    const status = err.statusCode || 500;
+    res.status(status).json({ error: err.message || 'Erro interno do servidor' });
+}
 
 module.exports = errorHandler;

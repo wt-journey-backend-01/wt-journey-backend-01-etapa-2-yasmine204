@@ -8,7 +8,7 @@ const { includes } = require('zod');
 const getCasos = (req, res, next) => {
     try {
         let casos = casosRepository.findAll();
-        const { agente_id, status} = req.query;
+        const { agente_id, status, q} = req.query;
 
         if(agente_id) {
             casos = casos.filter(caso => caso.agente_id === agente_id);
@@ -18,10 +18,18 @@ const getCasos = (req, res, next) => {
             casos = casos.filter(caso => caso.status.toLowerCase() === status.toLowerCase());
         }
 
+        if(q) {
+            const term = q.toLowerCase();
+            casos = casos.filter(caso =>
+                caso.titulo.toLowerCase().includes(term) || 
+                caso.descricao.toLowerCase().includes(term)
+            );
+        }
+
         res.status(200).json(casos);
     }
     catch(error) {
-        next(new ApiError('Erro ao listar casos.'));
+        next(new ApiError(error.message, 400));
     }
 };
 
@@ -42,7 +50,7 @@ const getCasoById = (req, res, next) => {
         res.status(200).json(caso);
     } 
     catch (error) {
-        next(new ApiError('Erro ao listar caso.'));
+        next(new ApiError(error.message, 400));
     }
 };
 
@@ -116,7 +124,7 @@ const partiallyUpdateCaso = (req, res, next) => {
             return next(new ApiError('ID inválido.', 400));
         }
 
-        const parciallyData = casosSchema.partial().parse(req.body);
+        const partiallyData = casosSchema.partial().parse(req.body);
 
         if('agente_id' in parciallyData) {
             if(!isValidUuid(parciallyData.agente_id)) {
@@ -176,6 +184,9 @@ const getAgenteByCasoId = (req, res, next) => {
             return next(new ApiError('Caso não encontrado.', 404));
         }
 
+        console.log('Caso encontrado', caso);
+        console.log('Agente buscado', caso.agente);
+
         const agente = agentesRepository.findById(caso.agente_id);
         if(!agente) {
             return next(new ApiError('Agente não encontrado.', 404));
@@ -188,7 +199,7 @@ const getAgenteByCasoId = (req, res, next) => {
     }
 };
 
-const searchCasos = (req, res, next) => {
+/*const searchCasos = (req, res, next) => {
     try {
         let casos = casosRepository.findAll();
         const { q } = req.query;
@@ -206,7 +217,7 @@ const searchCasos = (req, res, next) => {
     catch (error) {
         next(new ApiError(error.message, 400));
     }
-};
+};*/
 
 module.exports = {
     getCasos,
@@ -215,6 +226,6 @@ module.exports = {
     updateCompletelyCaso,
     partiallyUpdateCaso,
     deleteCaso,
-    getAgenteByCasoId,
-    searchCasos
+    getAgenteByCasoId
+    //searchCasos
 }
