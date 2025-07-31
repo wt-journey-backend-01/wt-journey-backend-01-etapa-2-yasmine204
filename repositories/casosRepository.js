@@ -1,21 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 
-const casos = [
-    {
-        id: "321e4567-e89b-12d3-a456-426614174000",
-        titulo: "homicídio",
-        descricao: "Disparos foram reportados às 22:33 do dia 10/07/2007 na região do bairro União, resultando na morte da vítima, um homem de 45 anos.",
-        status: "aberto",
-        agente_id: "123e4567-e89b-12d3-a456-426614174000"
-    },
-    {
-        id: "654e3210-b98a-76c5-d432-123456789abc",
-        titulo: "roubo a banco",
-        descricao: "Assalto registrado às 14:20 do dia 21/08/2020 em agência bancária do centro, com reféns e violência.",
-        status: "aberto",
-        agente_id: "987f6543-a21b-34c5-b678-987654321000"
-    }
-];
+const casos = [ ];
 
 const findAll = () => casos;
 

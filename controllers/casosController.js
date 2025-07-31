@@ -184,9 +184,6 @@ const getAgenteByCasoId = (req, res, next) => {
             return next(new ApiError('Caso não encontrado.', 404));
         }
 
-        console.log('Caso encontrado', caso);
-        console.log('Agente buscado', caso.agente);
-
         const agente = agentesRepository.findById(caso.agente_id);
         if(!agente) {
             return next(new ApiError('Agente não encontrado.', 404));
