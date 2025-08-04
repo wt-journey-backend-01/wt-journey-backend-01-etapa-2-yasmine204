@@ -2,6 +2,7 @@ const repository = require('../repositories/agentesRepository');
 const { agentesSchema } = require('../utils/agentesValidation');
 const isValidUuid = require('../utils/uuidValidation');
 const ApiError = require('../utils/ApiError');
+const formatZodError = require('../utils/formatZodError');
 
 const getAgentes = (req, res, next) => {
     try {
@@ -13,25 +14,18 @@ const getAgentes = (req, res, next) => {
                 agente.cargo.toLowerCase() === cargo.toLowerCase());
         }
 
-        const validSortFields = ['dataDeIncorporacao', 'nome', 'cargo'];
         if(sort) {
-            const isDesc = sort.startsWith('-');
-            const field = isDesc ? sort.slice(1) : sort;
+            const decreasing = sort.startsWith('-');
+            const field = decreasing ? sort.slice(1) : sort;
 
-            if(validSortFields.includes(field)) {
+            if(field === 'dataDeIncorporacao') {
                 agentes = [...agentes].sort((a, b) => {
-                    if(field === 'dataDeIncorporacao') {
-                        const dateA = new Date(a[field]);
-                        const dateB = new Date(b[field]);
-                        return isDesc ? dateB - dateA : dateA - dateB;
-                    } 
-                    else {
-                        return isDesc 
-                            ? b[field].localeCompare(a[field]) 
-                            : a[field].localeCompare(b[field]);
-                    }
+                    const dateA = new Date(a.dataDeIncorporacao).getTime();
+                    const dateB = new Date(b.dataDeIncorporacao).getTime();
+                    
+                    return decreasing ? dateB - dateA : dateA - dateB;
                 });
-            } 
+            }
         }
 
         res.status(200).json(agentes);
@@ -69,7 +63,7 @@ const createAgente = (req, res, next) => {
         const dataReceived = {
             nome: nome,
             dataDeIncorporacao: dataDeIncorporacao,
-            cargo: cargo.toLowerCase()
+            cargo: cargo
         };
 
         const data = agentesSchema.parse(dataReceived);
@@ -79,7 +73,9 @@ const createAgente = (req, res, next) => {
 
     } 
     catch (error) {
-        next(new ApiError(error.message, 400));
+        if(formatZodError(error, next)) return;
+
+        next(new ApiError(error.message));
     }
 };
 
@@ -99,8 +95,11 @@ const updateCompletelyAgente = (req, res, next) => {
         }
 
         res.status(200).json(updated);
-    } catch (error) {
-        next(new ApiError(error.message, 400));
+    } 
+    catch (error) {
+        if(formatZodError(error, next)) return;
+
+        next(new ApiError(error.message));
     }
 };
 
@@ -122,7 +121,9 @@ const partiallyUpdateAgente = (req, res, next) => {
         res.status(200).json(updated);
     } 
     catch (error) {
-        next(new ApiError(error.message, 400));
+        if(formatZodError(error, next)) return;
+
+        next(new ApiError(error.message));
     }
 };
 

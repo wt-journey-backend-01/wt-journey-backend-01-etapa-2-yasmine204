@@ -3,12 +3,12 @@ const agentesRepository = require('../repositories/agentesRepository');
 const { casosSchema } = require('../utils/casosValidation');
 const isValidUuid = require('../utils/uuidValidation');
 const ApiError = require('../utils/ApiError');
-const { includes } = require('zod');
+const formatZodError = require('../utils/formatZodError');
 
 const getCasos = (req, res, next) => {
     try {
         let casos = casosRepository.findAll();
-        const { agente_id, status, q} = req.query;
+        const { agente_id, status, q } = req.query;
 
         if(agente_id) {
             casos = casos.filter(caso => caso.agente_id === agente_id);
@@ -20,9 +20,9 @@ const getCasos = (req, res, next) => {
 
         if (q && q.trim() !== '') {
             const term = q.toLowerCase();
-            casos = casos.filter(c =>
-                c.titulo.toLowerCase().includes(term) ||
-                c.descricao.toLowerCase().includes(term)
+            casos = casos.filter(caso =>
+                caso.titulo.toLowerCase().includes(term) ||
+                caso.descricao.toLowerCase().includes(term)
             );
         }
 
@@ -70,7 +70,7 @@ const createCaso = (req, res, next) => {
         const dataReceived = {
             titulo,
             descricao,
-            status: status.toLowerCase(), 
+            status: status, 
             agente_id
         };
 
@@ -80,7 +80,9 @@ const createCaso = (req, res, next) => {
         res.status(201).json(newCaso);
     } 
     catch (error) {
-        next(new ApiError(error.message, 400));
+        if(formatZodError(error, next)) return;
+
+        next(new ApiError(error.message));
     }
 };
 
@@ -112,7 +114,9 @@ const updateCompletelyCaso = (req, res, next) => {
         res.status(200).json(updated);
     } 
     catch (error) {
-        next(new ApiError(error.message, 400));
+        if(formatZodError(error, next)) return;
+
+        next(new ApiError(error.message));
     }
 };
 
@@ -146,7 +150,9 @@ const partiallyUpdateCaso = (req, res, next) => {
         res.status(200).json(updated);
     } 
     catch (error) {
-        next(new ApiError(error.message, 400));
+        if(formatZodError(error, next)) return;
+
+        next(new ApiError(error.message));
     }
 };
 

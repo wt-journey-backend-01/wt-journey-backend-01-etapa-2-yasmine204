@@ -23,24 +23,6 @@ router.get('/', controller.getCasos);
 
 /**
  * @swagger
- * /casos/{id}:
- *  get:
- *      summary: Busca um caso pelo id
- *      tags: [Casos]
- *      parameters:
- *          - in: path
- *            name: id
- *            required: true
- *            schema:
- *              type: string
- *      responses:
- *          200:
- *              description: Caso encontrado com sucesso
- */
-router.get('/:id', controller.getCasoById);
-
-/**
- * @swagger
  * /casos:
  *  post: 
  *      summary: Cria um novo caso
@@ -67,6 +49,42 @@ router.get('/:id', controller.getCasoById);
  *              description: Caso criado com sucesso 
  */
 router.post('/', controller.createCaso);
+
+/**
+ * @swagger
+ * /casos/{id}/agente:
+ *  get:
+ *      summary: Busca um agente pelo id do caso
+ *      tags: [Casos]
+ *      parameters:
+ *          - in: path
+ *            name: id
+ *            required: true
+ *            schema:
+ *              type: string
+ *      responses:
+ *          200:
+ *              description: Agente encontrado com sucesso
+ */
+router.get('/:id/agente', controller.getAgenteByCasoId);
+
+/**
+ * @swagger
+ * /casos/{id}:
+ *  get:
+ *      summary: Busca um caso pelo id
+ *      tags: [Casos]
+ *      parameters:
+ *          - in: path
+ *            name: id
+ *            required: true
+ *            schema:
+ *              type: string
+ *      responses:
+ *          200:
+ *              description: Caso encontrado com sucesso
+ */
+router.get('/:id', controller.getCasoById);
 
 /**
  * @swagger
@@ -154,23 +172,5 @@ router.patch('/:id', controller.partiallyUpdateCaso);
  *              description: Caso deletado com sucesso
  */
 router.delete('/:id', controller.deleteCaso);
-
-/**
- * @swagger
- * /casos/{id}/agente:
- *  get:
- *      summary: Busca um agente pelo id do caso
- *      tags: [Casos]
- *      parameters:
- *          - in: path
- *            name: id
- *            required: true
- *            schema:
- *              type: string
- *      responses:
- *          200:
- *              description: Agente encontrado com sucesso
- */
-router.get('/:id/agente', controller.getAgenteByCasoId);
 
 module.exports = router;

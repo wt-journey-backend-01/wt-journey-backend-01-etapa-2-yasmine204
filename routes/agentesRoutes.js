@@ -23,24 +23,6 @@ router.get('/', controller.getAgentes);
 
 /**
  * @swagger
- * /agentes/{id}:
- *   get:
- *     summary: Busca um agente pelo id
- *     tags: [Agentes]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Agente encontrado com sucesso
- */
-router.get('/:id', controller.getAgentesById);
-
-/**
- * @swagger
  * /agentes:
  *   post:
  *     summary: Cria um novo agente
@@ -65,6 +47,24 @@ router.get('/:id', controller.getAgentesById);
  *         description: Agente criado com sucesso
  */
 router.post('/', controller.createAgente);
+
+/**
+ * @swagger
+ * /agentes/{id}:
+ *   get:
+ *     summary: Busca um agente pelo id
+ *     tags: [Agentes]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Agente encontrado com sucesso
+ */
+router.get('/:id', controller.getAgentesById);
 
 /**
  * @swagger
