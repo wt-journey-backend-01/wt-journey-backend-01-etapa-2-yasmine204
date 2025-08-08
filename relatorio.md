@@ -1,122 +1,36 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 7 créditos restantes para usar o sistema de feedback AI.
+Você tem 6 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para yasmine204:
 
-Nota final: **74.6/100**
+Nota final: **83.5/100**
 
-# Feedback para você, yasmine204! 🚔✨
+Olá, Yasmine! 👋😊
 
-Olá! Primeiro, quero te parabenizar pelo esforço e pela entrega desse projeto desafiador de API REST para o Departamento de Polícia! 🎉 Você estruturou seu projeto seguindo a arquitetura modular com rotas, controllers e repositories, o que já é um baita passo para construir um código organizado e escalável. Além disso, vi que você implementou várias validações importantes, tratamento de erros com mensagens customizadas e até filtros nos endpoints — isso é sensacional! 👏👏
+Primeiramente, parabéns pelo empenho e pela entrega dessa API tão importante para o Departamento de Polícia! 🚓🔍 Você estruturou seu projeto muito bem, com rotas, controllers e repositories organizados, e implementou a maioria dos métodos HTTP com validações e tratamentos de erro — isso é fantástico! 🎉👏
 
 ---
 
 ## 🎯 Pontos Fortes que Merecem Destaque
 
-- **Estrutura modular bem aplicada:** Você dividiu muito bem as responsabilidades entre rotas, controllers e repositories, facilitando a manutenção.
-- **Validação e tratamento de erros:** O uso do Zod para validar os dados e o middleware customizado para tratamento de erros mostram que você está preocupado(a) com a qualidade da API.
-- **Filtros nos endpoints:** A implementação de filtros simples para os casos (por status e agente) e agentes (por cargo e ordenação por data) está correta e funcionando.
-- **Swagger documentado:** Você já começou a documentar sua API, isso agrega muito valor para quem for consumir ou manter seu serviço.
-- **Uso correto dos métodos HTTP e status codes:** Vi que você está retornando os códigos HTTP adequados na maioria dos casos (200, 201, 204, 400, 404).
-- **Bônus conquistados:** Parabéns por implementar os filtros de casos por status e agente, e também a ordenação de agentes por data de incorporação! Isso demonstra um cuidado extra com a experiência do usuário da API.
+- Seu código está muito bem modularizado: as rotas estão separadas (`routes/agentesRoutes.js` e `routes/casosRoutes.js`), os controllers estão claros e objetivos, e os repositories fazem um ótimo trabalho gerenciando os dados em memória. Isso mostra que você entendeu bem a arquitetura MVC para APIs RESTful! 👏
+
+- Você implementou corretamente os métodos HTTP para os recursos `/agentes` e `/casos`, incluindo os métodos PUT, PATCH, DELETE, e fez a validação de UUIDs e dos dados recebidos usando o Zod, o que é excelente para a robustez da API.
+
+- O tratamento de erros está consistente, usando uma classe `ApiError` personalizada e um middleware para lidar com eles. Isso deixa sua API mais profissional e amigável para quem consome. 🙌
+
+- Você conseguiu implementar filtros básicos para os casos (por status e agente) e para agentes (por cargo), e também fez a ordenação por data de incorporação, que é um bônus muito legal! Isso mostra que você foi além do mínimo esperado. 🚀
 
 ---
 
-## 🔍 Análise Profunda e Oportunidades de Melhoria
+## 🔎 Análise Detalhada e Oportunidades de Melhoria
 
-### 1. **Falha ao impedir alteração do campo `id` nos métodos PUT e PATCH**
+### 1. Sobre o endpoint de busca de agente responsável por um caso (`GET /casos/:id/agente`) e a filtragem por keywords no título/descrição dos casos
 
-Eu percebi que, no seu código, embora você valide os dados recebidos e atualize os recursos, não há nenhuma proteção para impedir que o campo `id` seja alterado via PUT ou PATCH, tanto para agentes quanto para casos. Isso é um problema porque o `id` deve ser imutável — ele é a identidade única do recurso e não pode ser modificado.
+Vi que você implementou o endpoint `getAgenteByCasoId` no controller de casos e a rota correspondente em `casosRoutes.js` corretamente, o que é ótimo! Porém, percebi que o teste de filtragem por keywords (query param `q`) em `/casos` não passou, o que indica que essa funcionalidade pode não estar funcionando 100%.
 
-Por exemplo, no seu `updateCompletelyAgente` em `controllers/agentesController.js`:
-
-```js
-const updated = repository.updateCompletely(id, data);
-```
-
-E no seu `updateCompletely` do `agentesRepository.js`:
-
-```js
-agentes[index] = {
-    id: id,
-    ...data 
-};
-```
-
-Aqui você está sobrescrevendo o agente inteiro com os dados recebidos, mas se o objeto `data` tiver um `id` diferente, ele vai substituir o correto? Na verdade, olhando seu código, você está forçando o `id` correto no repositório, o que é bom, mas no controller você não está validando se o payload tentou alterar o `id`. O mesmo acontece no PATCH.
-
-**Por que isso é importante?**  
-Permitir que o cliente altere o `id` pode causar inconsistências e erros graves na sua API.
-
-**Como corrigir?**  
-No controller, antes de chamar o repositório, você pode remover o campo `id` do objeto `data` (ou `partiallyData`) para garantir que ele não seja alterado:
-
-```js
-// Exemplo para PUT
-const data = agentesSchema.parse(req.body);
-delete data.id; // Remove o campo id se existir
-const updated = repository.updateCompletely(id, data);
-```
-
-Ou, melhor ainda, você pode adaptar seu schema Zod para não aceitar o campo `id` no payload, pois o `id` deve ser gerado e controlado internamente.
-
----
-
-### 2. **Falha no endpoint de busca do agente responsável por um caso (`GET /casos/:id/agente`)**
-
-Você implementou o endpoint na rota e no controller, mas ele está falhando nos testes de busca do agente pelo ID do caso.
-
-Olhando no `casosController.js`, seu método `getAgenteByCasoId` está assim:
-
-```js
-const getAgenteByCasoId = (req, res, next) => {
-    try {
-        const { id } = req.params;
-
-        if(!isValidUuid(id)) {
-            return next(new ApiError('ID de caso inválido.', 400));
-        }
-
-        const caso = casosRepository.findById(id);
-        if(!caso) {
-            return next(new ApiError('Caso não encontrado.', 404));
-        }
-
-        const agente = agentesRepository.findById(caso.agente_id);
-        if(!agente) {
-            return next(new ApiError('Agente não encontrado.', 404));
-        }
-
-        res.status(200).json(agente);
-    } 
-    catch (error) {
-        next(new ApiError(error.message, 400));    
-    }
-};
-```
-
-Parece correto, certo? Porém, o problema pode estar na ordem das rotas no `casosRoutes.js`. Você definiu as rotas assim:
-
-```js
-router.get('/:id/agente', controller.getAgenteByCasoId);
-router.get('/:id', controller.getCasoById);
-```
-
-No Express, a ordem das rotas importa! Se o `/:id` vier antes do `/:id/agente`, a rota `/:id` vai capturar a requisição para `/casos/algum-id/agente` e o Express nunca vai chegar no handler correto.
-
-No seu código, a ordem está correta (o `/casos/:id/agente` vem antes do `/casos/:id`), então isso não é o problema.
-
-Outra hipótese é que o `agente_id` associado ao caso esteja incorreto ou o agente não exista no array, mas seu repositório inicial tem agentes e casos consistentes.
-
-**Sugestão:**  
-Verifique se o ID do caso passado na requisição é um UUID válido e se o agente realmente existe. Se estiver tudo certo, o código está correto.
-
----
-
-### 3. **Filtros de busca por keywords no título e descrição dos casos não estão funcionando**
-
-Você implementou o filtro por `q` no método `getCasos` do `casosController.js`:
+Olhei seu código do método `getCasos` no controller:
 
 ```js
 if (q && q.trim() !== '') {
@@ -128,136 +42,163 @@ if (q && q.trim() !== '') {
 }
 ```
 
-Isso está ótimo! O problema pode ser que o teste não esteja encontrando resultados porque você não está fazendo a validação de que `q` é uma string ou porque o filtro não é aplicado corretamente em algum cenário.
+Essa parte está correta na lógica, mas pode ser que o problema esteja na forma como o query param `q` está sendo passado ou testado. Recomendo você verificar se o cliente está enviando o parâmetro `q` corretamente na URL e se o valor não está vazio ou com espaços extras.
 
-Outra possibilidade é que o cliente não esteja enviando o parâmetro `q` corretamente.
+Além disso, para garantir que o filtro funcione bem, você pode adicionar um log temporário para depurar:
 
-**Recomendo:**  
-Fazer testes manuais para garantir que o filtro funcione, e talvez adicionar logs para depurar.
+```js
+console.log('Query q:', q);
+```
+
+Se quiser reforçar esse conhecimento, confira este vídeo que explica bem como manipular query parameters e filtros em APIs Express:  
+▶️ https://youtu.be/--TQwiNIw28
 
 ---
 
-### 4. **Mensagens de erro customizadas para IDs inválidos**
+### 2. Sobre o filtro e ordenação de agentes por data de incorporação
 
-Você está usando o `ApiError` para lançar erros personalizados, o que é ótimo! Porém, alguns testes falham na validação das mensagens de erro customizadas para IDs inválidos (tanto para agentes quanto para casos).
-
-Por exemplo, em `createCaso`:
+Você implementou a ordenação por `dataDeIncorporacao` no método `getAgentes` assim:
 
 ```js
-if(!isValidUuid(agente_id)) {
-    return next(new ApiError('ID de agente inválido.', 400));
+if(sort) {
+    const decreasing = sort.startsWith('-');
+    const field = decreasing ? sort.slice(1) : sort;
+
+    if(field === 'dataDeIncorporacao') {
+        agentes = [...agentes].sort((a, b) => {
+            const dateA = new Date(a.dataDeIncorporacao).getTime();
+            const dateB = new Date(b.dataDeIncorporacao).getTime();
+            
+            return decreasing ? dateB - dateA : dateA - dateB;
+        });
+    }
 }
 ```
 
-E em outros lugares, mensagens parecidas.
+A lógica está correta! 🎉 Porém, percebi que os testes de ordenação (ascendente e descendente) não passaram, o que pode indicar que o parâmetro `sort` não está sendo interpretado ou enviado corretamente na requisição, ou talvez a comparação de datas esteja com algum detalhe faltando.
 
-**O que pode estar acontecendo?**  
-- Pequenas diferenças de texto nas mensagens (como ponto final, letras maiúsculas/minúsculas) podem fazer o teste falhar.
-- Ou o middleware de tratamento de erro não está formatando a resposta exatamente como esperado.
+Algumas sugestões para você validar:
 
-**Dica:**  
-Padronize as mensagens de erro e confira se o middleware `errorHandler` está retornando o corpo da resposta com o formato esperado (ex: `{ message: '...', statusCode: ... }`).
+- Confirme que o parâmetro `sort` está chegando como esperado no `req.query`.
+- Verifique se o formato da data no seu array `agentes` está sendo interpretado corretamente pelo `new Date()`. Seu formato `"1992-10-04"` está OK, mas às vezes o fuso horário pode interferir levemente.
+- Teste o código isoladamente para garantir que a ordenação funciona como esperado.
+
+Se quiser entender melhor como ordenar arrays e manipular datas em JavaScript, este vídeo é ideal:  
+▶️ https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI
 
 ---
 
-### 5. **Penalidades: Alteração do campo `id` via PUT e PATCH**
+### 3. Mensagens de erro customizadas para argumentos inválidos
 
-Esse ponto é crítico! Eu vi no seu repositório que, embora você esteja forçando o `id` no repositório, o schema Zod usado para validação não está impedindo que o campo `id` seja enviado e modificado no payload.
-
-Isso pode gerar bugs sutis, pois o cliente pode enviar um `id` diferente no corpo da requisição e seu código vai ignorar, mas não avisa que isso não é permitido.
-
-**Como resolver:**  
-- Atualize seus schemas Zod (`agentesValidation.js` e `casosValidation.js`) para que o campo `id` não seja aceito no corpo das requisições de criação ou atualização.
-- No controller, rejeite ou remova o campo `id` se enviado no corpo.
-  
-Exemplo com Zod para evitar `id`:
+Você está usando a classe `ApiError` para criar erros personalizados, o que é ótimo! Por exemplo:
 
 ```js
-const agenteSchema = z.object({
-    nome: z.string(),
-    dataDeIncorporacao: z.string(),
-    cargo: z.enum(['inspetor', 'delegado', 'escrivão', 'agente']),
-    // Não incluir id aqui
-});
+if(!isValidUuid(id)) {
+    return next(new ApiError('ID inválido.', 400));
+}
 ```
 
----
+Porém, alguns testes de mensagens customizadas falharam, sugerindo que talvez as mensagens de erro não estejam 100% alinhadas com o esperado.
 
-## 📚 Recursos para você se aprofundar e fortalecer seu código
+Dica para melhorar:
 
-- Para entender melhor o **roteamento no Express.js** e a importância da ordem das rotas, confira a documentação oficial:  
-  https://expressjs.com/pt-br/guide/routing.html
+- Garanta que todas as validações de UUID e de dados retornem mensagens claras, padronizadas e específicas para cada tipo de erro.
+- Verifique se o middleware `errorHandler` está formatando as respostas de erro corretamente, incluindo status code e mensagem.
+- Para erros de validação do Zod, você está usando `formatZodError(error, next)`, o que é ótimo. Apenas confira se essa função está retornando mensagens detalhadas e amigáveis.
 
-- Para reforçar o conceito de **validação de dados e tratamento de erros HTTP 400 e 404**, recomendo este vídeo muito didático:  
-  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
-
-- Para garantir que o **id não seja alterado** e entender como trabalhar com esquemas de validação robustos usando Zod, veja este conteúdo:  
-  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400
-
-- Para aprimorar a manipulação e filtragem de arrays em memória, que você já começou muito bem, este vídeo pode ajudar:  
-  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI
+Para aprimorar seu conhecimento sobre tratamento de erros e status HTTP, recomendo:  
+📚 https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400  
+📚 https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404  
+🎥 https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
 
 ---
 
-## ✅ Resumo dos Principais Pontos para Você Focar Agora
+### 4. Sobre a estrutura do projeto
 
-- **Impedir alteração do campo `id` nos métodos PUT e PATCH**: ajuste seus schemas e controllers para garantir que `id` não possa ser alterado via payload.  
-- **Revisar mensagens de erro customizadas e middleware de tratamento de erros** para garantir que o formato e texto estejam padronizados e claros.  
-- **Testar e validar o endpoint `GET /casos/:id/agente`** para garantir que está funcionando corretamente, e que os dados no repositório estão consistentes.  
-- **Verificar o filtro por keywords (`q`) nos casos**, fazendo testes manuais para garantir que está funcionando como esperado.  
-- **Manter a organização modular do projeto**, que está excelente! Continue assim.  
+Sua estrutura de arquivos está conforme o esperado, o que é um ponto muito positivo! 👏
 
----
-
-## Finalizando... 🚀
-
-Você está no caminho certo, yasmine204! Seu código já mostra um bom domínio de conceitos importantes de API RESTful com Node.js e Express, e você se preocupou com validação, tratamento de erros e organização. Os pontos que destaquei são ajustes finos que vão deixar sua API ainda mais robusta e alinhada com as melhores práticas.
-
-Continue praticando, testando suas rotas com ferramentas como Postman ou Insomnia, e explorando o poder do Express e do Zod para construir APIs seguras e confiáveis. Você está fazendo um trabalho muito bom, e com esses ajustes vai ficar ainda melhor! 💪✨
-
-Se precisar de ajuda, estarei por aqui! 😉
-
-Um abraço forte e bons códigos! 👮‍♀️👨‍💻
-
----
-
-# Código exemplo para impedir alteração do `id` no controller
-
-```js
-// Exemplo para PUT no agentesController.js
-const updateCompletelyAgente = (req, res, next) => {
-    try {
-        const { id } = req.params;
-
-        if(!isValidUuid(id)) {
-            return next(new ApiError('ID inválido.', 400));
-        }
-
-        // Remove o campo id do corpo, caso tenha sido enviado
-        const bodyCopy = { ...req.body };
-        delete bodyCopy.id;
-
-        const data = agentesSchema.parse(bodyCopy);
-
-        const updated = repository.updateCompletely(id, data);
-
-        if(!updated) {
-            return next(new ApiError('Agente não encontrado', 404));
-        }
-
-        res.status(200).json(updated);
-    } 
-    catch (error) {
-        if(formatZodError(error, next)) return;
-
-        next(new ApiError(error.message));
-    }
-};
+```
+.
+├── controllers/
+│   ├── agentesController.js
+│   └── casosController.js
+├── repositories/
+│   ├── agentesRepository.js
+│   └── casosRepository.js
+├── routes/
+│   ├── agentesRoutes.js
+│   └── casosRoutes.js
+├── utils/
+│   ├── ApiError.js
+│   ├── errorHandler.js
+│   ├── agentesValidation.js
+│   ├── casosValidation.js
+│   ├── formatZodError.js
+│   └── uuidValidation.js
+├── docs/
+│   └── swagger.js
+├── server.js
+├── package.json
+└── ...
 ```
 
+Isso mostra que você compreende bem a importância de organizar seu código para facilitar manutenção e escalabilidade! Se quiser entender melhor essa arquitetura MVC aplicada a Node.js, este vídeo é muito bom:  
+▶️ https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH
+
 ---
 
-Continue firme nessa jornada! 🚔💙
+## 💡 Dicas Extras para Você Avançar Ainda Mais
+
+- Continue testando suas rotas com ferramentas como Postman ou Insomnia e preste atenção nos parâmetros que você envia (query params, path params, body). Isso ajuda a garantir que as funcionalidades de filtro e busca funcionem como esperado.
+
+- Para a filtragem por keywords, tente testar com diferentes termos e veja se o filtro está ignorando maiúsculas/minúsculas e espaços extras.
+
+- Para mensagens de erro, tente padronizar o formato de resposta, por exemplo:
+
+```json
+{
+  "error": "ID inválido.",
+  "status": 400
+}
+```
+
+Isso deixa a API mais amigável para quem consome.
+
+---
+
+## 📝 Resumo dos Principais Pontos para Melhorar
+
+- [ ] Verificar e ajustar o filtro por keywords (`q`) no endpoint `/casos` para garantir que está funcionando corretamente.
+
+- [ ] Confirmar o funcionamento da ordenação (`sort`) por `dataDeIncorporacao` no endpoint `/agentes`, garantindo que o parâmetro está sendo interpretado e aplicado corretamente.
+
+- [ ] Padronizar e detalhar as mensagens de erro customizadas para validações de UUID e payloads inválidos, garantindo que o middleware `errorHandler` está formatando as respostas de forma clara.
+
+- [ ] Testar com atenção os parâmetros das requisições para garantir que os filtros e buscas estão recebendo os dados corretamente.
+
+- [ ] Continuar explorando e praticando a arquitetura modular e o uso de middlewares para deixar sua API cada vez mais robusta.
+
+---
+
+Yasmine, você está no caminho certo e sua API já está muito bem construída! 🚀✨ Continue focando nessas melhorias para deixar seu código ainda mais sólido e profissional. Qualquer dúvida, estou aqui para te ajudar nessa jornada! 💪😊
+
+Bons códigos e até a próxima! 👩‍💻👨‍💻🕵️‍♂️
+
+---
+
+### Recursos recomendados para você estudar e aprimorar:
+
+- Fundamentos Express.js e roteamento: https://expressjs.com/pt-br/guide/routing.html  
+- Arquitetura MVC para Node.js: https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH  
+- Manipulação de query params e filtros: https://youtu.be/--TQwiNIw28  
+- Manipulação de arrays e ordenação em JS: https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI  
+- Validação e tratamento de erros HTTP: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400  
+- Validação e tratamento de erros HTTP: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404  
+- Validação de dados em APIs Node.js/Express: https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
+
+---
+
+Continue com esse ótimo trabalho, Yasmine! Você está construindo uma base sólida para se tornar uma desenvolvedora incrível! 🚀💙
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
