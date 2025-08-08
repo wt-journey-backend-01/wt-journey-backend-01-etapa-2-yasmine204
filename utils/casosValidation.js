@@ -13,6 +13,6 @@ const casosSchema = z.object({
 
     agente_id: z
     .string({ required_error: 'O ID do agente é obrigatório.' })
-});
+}).strict();
 
 module.exports = { casosSchema };                                                                                                                                                                                                                                                                         

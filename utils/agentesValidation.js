@@ -20,6 +20,6 @@ const agentesSchema = z.object({
     }),
     
     cargo: z.string({ required_error: 'Cargo é obrigatório' }).min(1, 'Cargo não pode estar vazio.')
-});
+}).strict();
 
 module.exports = { agentesSchema };
