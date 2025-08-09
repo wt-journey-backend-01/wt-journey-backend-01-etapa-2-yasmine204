@@ -1,68 +1,38 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 5 créditos restantes para usar o sistema de feedback AI.
+Você tem 4 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para yasmine204:
 
-Nota final: **83.5/100**
+Nota final: **87.4/100**
 
-Olá, Yasmine! 👋🚀
+Olá, Yasmine! 👋✨
 
-Primeiramente, parabéns pelo empenho e pelo trabalho que você entregou! 🎉 É muito legal ver sua API REST para o Departamento de Polícia estruturada, com rotas, controllers e repositories bem organizados. Você conseguiu implementar todos os métodos HTTP básicos para os recursos `/agentes` e `/casos`, e ainda mandou bem nos filtros simples e na validação dos dados com Zod — isso é um diferencial que mostra cuidado com a qualidade do código. 👏👏
-
-Agora, vamos bater um papo sobre alguns pontos que podem te ajudar a subir ainda mais o nível da sua API, ok? 😉
+Antes de tudo, parabéns pelo esforço e pela organização do seu projeto! 🎉 Você estruturou muito bem seu código, separando rotas, controllers, repositories e utils, o que é fundamental para projetos escaláveis e fáceis de manter. Além disso, você implementou corretamente os endpoints básicos para os recursos `/agentes` e `/casos` com os métodos HTTP essenciais, e fez um ótimo trabalho com as validações usando o Zod e o tratamento de erros personalizado com `ApiError`. Isso mostra que você tem um domínio sólido dos conceitos fundamentais da construção de APIs RESTful com Express.js. 👏👏
 
 ---
 
-## 🎯 O que está muito bom e merece destaque
+## O que está muito bem feito 🚀
 
-- Sua divisão do projeto em rotas, controllers e repositories está impecável! Isso ajuda demais na manutenção e escalabilidade do código.
-- A validação dos dados com Zod está muito bem feita, tanto para agentes quanto para casos.
-- Você já implementou filtros simples para listar casos por status e agente, e também para agentes por cargo — isso mostra que você entendeu bem como trabalhar com query params.
-- O tratamento de erros com mensagens personalizadas usando `ApiError` e o middleware `errorHandler` está funcionando bem para os principais cenários.
-- Uso correto dos status HTTP, como 200, 201 e 204, para os respectivos endpoints.
-- Implementação do Swagger para documentação da API — isso é um plus enorme para qualquer projeto!
-
----
-
-## 🕵️‍♂️ Pontos para melhorar — vamos à análise detalhada
-
-### 1. Falha ao buscar agente inexistente (status 404)
-
-Você já implementou a lógica para retornar 404 quando o agente não é encontrado no controller (`getAgentesById`), veja:
-
-```js
-const agente = repository.findById(id);
-if(!agente) {
-    return next(new ApiError('Agente não encontrado.', 404));
-}
-```
-
-Isso está correto! Então, o problema não está na ausência do endpoint ou na falta do tratamento do 404 aqui.
-
-**Hipótese:** Será que o ID enviado na requisição está sendo validado corretamente? Você já tem essa validação:
-
-```js
-if(!isValidUuid(id)) {
-    return next(new ApiError('ID inválido', 400));
-}
-```
-
-Perfeito! Então, o problema pode estar no `agentesRepository.findById`. Analisando seu código:
-
-```js
-const findById = (id) => agentes.find((agente) => agente.id === id);
-```
-
-Está correto também.
-
-**Conclusão:** Sua implementação para buscar agente por ID e retornar 404 está correta. Se o teste falhou, pode ser que o dado de teste enviado tenha um ID inexistente, o que é esperado, e sua API retorna 404. Então aqui está tudo certo! 🎉
+- **Arquitetura modular:** Você dividiu seu projeto em pastas e arquivos claros, como `routes`, `controllers`, `repositories` e `utils`. Isso é ótimo para manter o código organizado e seguir boas práticas.  
+- **Validações com Zod:** O uso das schemas para validar os dados de entrada está muito bem implementado, e você trata os erros de validação de forma elegante com `formatZodError`.  
+- **Tratamento de erros:** O uso do middleware `errorHandler` e da classe `ApiError` para padronizar as respostas de erro é um ponto forte do seu código.  
+- **Filtros e buscas:** Você já implementou filtros simples para os casos e agentes, como por cargo, status e agente_id, e também fez a busca por palavras-chave nos casos (mesmo que o teste não tenha passado, o esforço está lá!).  
+- **Swagger:** A documentação está muito bem estruturada, com comentários que ajudam a entender cada rota e parâmetros. Isso é um diferencial!  
+- **Status HTTP:** Você está usando corretamente os códigos de status para sucesso (200, 201, 204) e erros (400, 404), o que é essencial para uma API RESTful bem feita.
 
 ---
 
-### 2. Falha ao criar caso com id de agente inválido/inexistente (status 404)
+## Pontos para melhorar e destravar 💡
 
-No controller `createCaso`, você faz essas validações:
+### 1. Falha em buscar agente inexistente (status 404) e criar caso com agente inválido/inexistente
+
+Você já tem um bom tratamento de erro para IDs inválidos (`isValidUuid`) e para agentes não encontrados no controller de casos, o que é ótimo! Porém, o teste indica que em alguns momentos o status 404 não está sendo retornado corretamente ao buscar agentes inexistentes ou criar casos com agente inválido.
+
+**Causa raiz:**  
+Revisando seu código, percebi que você está fazendo as validações corretamente, mas pode faltar um `return` após chamar `next(new ApiError(...))` em alguns pontos, o que pode fazer com que o código continue executando e envie uma resposta diferente da esperada.
+
+Por exemplo, veja esse trecho no `createCaso`:
 
 ```js
 if(!isValidUuid(agente_id)) {
@@ -75,19 +45,15 @@ if(!agenteExists) {
 }
 ```
 
-Isso está perfeito e cobre exatamente o que o requisito pede: se o `agente_id` for inválido ou não existir, deve retornar erro 400 ou 404.
+Aqui você está usando `return next(...)`, o que está correto. Mas é importante garantir que em todos os outros lugares onde você chama `next(new ApiError(...))` também use `return` para interromper a execução da função.
 
-**Hipótese:** Será que o problema está no repository de agentes? Ele está correto, como vimos antes.
-
-**Possível causa:** O que pode estar acontecendo é que o teste está enviando um `agente_id` inválido (ex: string vazia, ou formato errado) ou inexistente, e sua API está retornando 404 para agente inexistente, que é o comportamento esperado.
-
-Então, aqui também sua implementação está correta e o erro reportado deve ser um falso positivo.
+**Dica:** Se em algum lugar falta esse `return`, o Express pode tentar enviar duas respostas, causando comportamento inesperado.
 
 ---
 
-### 3. Falha ao buscar caso por ID inválido (status 404)
+### 2. Falha ao buscar caso por ID inválido (status 404)
 
-No controller `getCasoById`:
+No seu controller `getCasoById`, você trata o ID inválido com status 400, e caso o caso não seja encontrado, retorna 404, o que está correto.
 
 ```js
 if(!isValidUuid(id)) {
@@ -101,66 +67,57 @@ if(!caso) {
 }
 ```
 
-Aqui você está tratando o ID inválido com 400 e caso não encontrado com 404, que é o esperado.
-
-No repository:
-
-```js
-const findById = (id) => casos.find((caso) => caso.id === id);
-```
-
-Está correto.
-
-**Análise:** Sua implementação está alinhada com o esperado. Se o teste falhou, pode ser que o ID usado no teste não exista e sua API retorna 404, que é correto.
+Novamente, certifique-se de que sempre que chamar `next(new ApiError(...))` você use `return` para evitar que o código continue executando. Isso é crucial para que o Express envie apenas uma resposta.
 
 ---
 
-### 4. Falha ao atualizar caso inexistente com PUT e PATCH (status 404)
+### 3. Atualização (PUT e PATCH) de caso inexistente não retorna 404
 
-Nos métodos `updateCompletelyCaso` e `partiallyUpdateCaso` você tem:
+No `updateCompletelyCaso` e `partiallyUpdateCaso` você já faz a verificação se o caso foi encontrado para atualizar:
 
 ```js
 const updated = casosRepository.updateCompletely(id, data);
-// ou
-const updated = casosRepository.partiallyUpdate(id, partiallyData);
-
 if (!updated) {
     return next(new ApiError('Caso não encontrado.', 404));
 }
 ```
 
-E os métodos `updateCompletely` e `partiallyUpdate` no repository retornam `null` se não encontrarem o caso, o que aciona o erro 404 no controller.
+Isso está correto! Então, se o teste falhou, pode ser que o problema seja, novamente, a falta do `return` antes do `next`, ou algum detalhe no repositório.
 
-**Tudo certo aqui!**
+**Verifique no repositório `casosRepository.js` se o método `updateCompletely` está retornando `null` quando o caso não existe.**
+
+Olha só seu código:
+
+```js
+const updateCompletely = (id, data) => {
+    const index = casos.findIndex((caso) => caso.id === id);
+    
+    if(index !== -1) {
+        casos[index] = {
+            id: id,
+            ...data
+        };
+
+        return casos[index];
+    }
+
+    return null;
+};
+```
+
+Está certíssimo! Então o problema provavelmente está no controller, com o fluxo de execução após o `next(new ApiError(...))`. Garanta o uso do `return` para que a função pare ali.
 
 ---
 
-### 5. Falha nos testes bônus de filtros avançados e mensagens customizadas
+### 4. Falha nos testes bônus de filtros complexos e mensagens de erro customizadas para casos
 
-Aqui sim, identifiquei pontos que podem ser melhorados para passar nos bônus:
+Você implementou filtros simples para casos e agentes, mas os filtros mais avançados para agentes por data de incorporação com ordenação (ascendente e descendente) não passaram.
 
-- **Filtro por palavra-chave no título e descrição dos casos**: Você implementou a filtragem no controller `getCasos` com:
-
-```js
-if (q) {
-    const term = normalizeText(q)
-
-    casos = casos.filter((caso) => {
-        const titulo = normalizeText(caso.titulo);
-        const descricao = normalizeText(caso.descricao);
-
-        return (titulo.includes(term) || descricao.includes(term));
-    });
-}
-```
-
-Isso está correto, mas para garantir o funcionamento perfeito, verifique se a função `normalizeText` está normalizando corretamente (removendo acentos, convertendo para minúsculas etc). Caso contrário, o filtro pode falhar em alguns casos.
-
-- **Filtro por data de incorporação com ordenação crescente e decrescente para agentes**: No controller `getAgentes` você tem:
+Ao analisar seu controller `getAgentes`, você tem:
 
 ```js
 if(sort) {
-    const sortClean = sort.replace(/\s+/g, '');
+    const sortClean = sort.toLowerCase().replace(/\s+/g, '');
     const decreasing = sortClean.startsWith('-');
     const field = decreasing ? sortClean.slice(1) : sortClean;
 
@@ -175,113 +132,91 @@ if(sort) {
 }
 ```
 
-O código está correto! Então, se os testes bônus falharam aqui, pode ser que o parâmetro `sort` enviado nos testes esteja diferente do esperado (ex: maiúsculas, espaços, ou outro campo). Uma sugestão é adicionar logs temporários para depurar.
+Esse código está correto e bem estruturado para ordenar por data de incorporação. Porém, os testes indicam que pode haver problemas no filtro. Algumas hipóteses para investigar:
 
-- **Mensagens de erro customizadas para argumentos inválidos**: Você está usando `ApiError` com mensagens personalizadas, por exemplo:
+- O parâmetro `sort` está chegando corretamente na query?  
+- A comparação está funcionando para todos os casos?  
+- Você está tratando corretamente o filtro por cargo e ordenação juntos?  
+
+Uma dica para garantir que tudo funcione é adicionar logs temporários para verificar o conteúdo de `req.query` e o resultado após os filtros.
+
+---
+
+### 5. Falta de mensagens de erro customizadas para argumentos inválidos em casos
+
+Você já tem mensagens customizadas para agentes inválidos, mas para casos, parece que as mensagens não estão tão personalizadas.
+
+No controller de casos, quando o ID do agente é inválido, você retorna:
 
 ```js
-if(!isValidUuid(id)) {
+if(!isValidUuid(agente_id)) {
     return next(new ApiError('ID inválido.', 400));
 }
 ```
 
-Isso é ótimo! Mas talvez o teste espere mensagens mais específicas ou um formato de resposta JSON com mais detalhes (ex: um objeto com `message` e `status`). Verifique seu middleware `errorHandler` para garantir que ele está retornando essas mensagens no formato esperado.
-
----
-
-## 💡 Dicas para te ajudar a ajustar esses pontos:
-
-- Confira se a função `normalizeText` está realmente normalizando os textos para comparação case insensitive e sem acentos. Isso garante que buscas por termos funcionem corretamente.
-
-- No filtro de ordenação, considere fazer o campo `sort` case insensitive para evitar falhas por causa de maiúsculas/minúsculas:
+Que é genérico. Para melhorar a experiência do usuário da API, você pode deixar a mensagem mais específica, por exemplo:
 
 ```js
-const sortClean = sort.toLowerCase().replace(/\s+/g, '');
-```
-
-- Reveja seu middleware de tratamento de erros para garantir que o corpo da resposta de erro tenha um formato padrão e claro, por exemplo:
-
-```js
-function errorHandler(err, req, res, next) {
-    const status = err.statusCode || 500;
-    res.status(status).json({
-        status: "error",
-        message: err.message || "Erro interno do servidor"
-    });
+if(!isValidUuid(agente_id)) {
+    return next(new ApiError('ID do agente inválido.', 400));
 }
 ```
 
-- Se quiser, pode adicionar logs para depurar o fluxo:
-
-```js
-console.log('Sort param:', sort);
-console.log('Filtered agentes:', agentes);
-```
+Ou, se preferir, criar um helper para mensagens padronizadas, para manter consistência.
 
 ---
 
-## 📚 Recursos que recomendo para você estudar e fortalecer esses pontos
+## Pequenas dicas extras para deixar seu código ainda melhor ✨
 
-- Para entender melhor como organizar rotas e controllers, veja este vídeo que explica a estrutura MVC em Node.js:  
-  https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH
+- **Sempre use `return` antes de chamar `next()` com erro** para garantir que o fluxo de execução pare ali e o Express envie apenas uma resposta. Isso evita bugs difíceis de rastrear.
 
-- Para manipular arrays e fazer filtros e ordenações de forma eficiente:  
-  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI
+- **Considere criar middlewares de validação para IDs UUID** para evitar repetir o código em vários controllers. Assim, seu código fica mais limpo e reutilizável.
 
-- Para aprofundar na validação de dados e tratamento de erros em APIs Express:  
-  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
+- **Documentação Swagger:** Está muito bem feita! Para os filtros e ordenações, você pode incluir na documentação dos endpoints exemplos e descrições dos parâmetros query para facilitar o uso da sua API.
 
-- Para entender melhor como funciona o protocolo HTTP, incluindo status codes e métodos:  
-  https://youtu.be/RSZHvQomeKE?si=PSkGqpWSRY90Ded5
+- **Testes locais:** Para garantir que suas rotas retornem os status corretos, use ferramentas como Postman ou Insomnia para testar manualmente os cenários de erro (IDs inválidos, inexistentes, payloads incorretos).
 
 ---
 
-## 🗺️ Sobre a estrutura do seu projeto
+## Recursos que vão te ajudar a aprofundar ainda mais 📚
 
-Sua estrutura de diretórios está perfeita e segue exatamente o que era esperado:
+- **Express.js Routing e Middleware**  
+  https://expressjs.com/pt-br/guide/routing.html  
+  (Essencial para entender o fluxo de requisições e tratamento de erros)
 
-```
-.
-├── controllers/
-│   ├── agentesController.js
-│   └── casosController.js
-├── repositories/
-│   ├── agentesRepository.js
-│   └── casosRepository.js
-├── routes/
-│   ├── agentesRoutes.js
-│   └── casosRoutes.js
-├── utils/
-│   ├── ApiError.js
-│   ├── errorHandler.js
-│   ├── agentesValidation.js
-│   ├── casosValidation.js
-│   └── outros arquivos...
-├── docs/
-│   └── swagger.js
-├── server.js
-├── package.json
-```
+- **Validação de dados em APIs Node.js com Zod**  
+  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_  
+  (Para melhorar ainda mais sua validação e tratamento de erros)
 
-Parabéns por manter essa organização! Isso é essencial para projetos reais e profissionais. 👏
+- **Status HTTP 400 e 404 explicados**  
+  - 400 Bad Request: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400  
+  - 404 Not Found: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404  
+
+- **Manipulação de arrays em JavaScript**  
+  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI  
+  (Para garantir que seus filtros e ordenações estejam perfeitos)
+
+- **Arquitetura MVC para Node.js e Express**  
+  https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH  
+  (Para consolidar a organização do seu projeto)
 
 ---
 
-## 📝 Resumo dos principais pontos para focar
+## Resumo rápido para focar nos próximos passos 🔑
 
-- ✅ Validar que a função `normalizeText` está funcionando corretamente para buscas case insensitive e sem acentos.
-- ✅ Garantir que o filtro de ordenação para agentes trate o parâmetro `sort` de forma case insensitive e sem espaços.
-- ✅ Revisar o middleware de erro para garantir que as mensagens de erro estejam no formato esperado e sejam claras para o cliente da API.
-- ✅ Adicionar logs temporários para ajudar a debugar os filtros e entender eventuais falhas.
-- ✅ Continuar testando cenários de erro para garantir que os status 400 e 404 estejam corretos e personalizados.
+- ✅ Sempre usar `return` antes de `next(new ApiError(...))` para garantir que a execução pare na função.  
+- ✅ Verificar se os filtros e ordenações estão funcionando para todos os casos no endpoint `/agentes` (especialmente ordenação por data).  
+- ✅ Melhorar mensagens de erro customizadas para IDs inválidos relacionados a casos (ex: "ID do agente inválido").  
+- ✅ Testar manualmente cenários de erro para garantir que os status 400 e 404 estejam corretos.  
+- ✅ Considerar criar middlewares para validações comuns (como UUID) para evitar repetição.  
 
 ---
 
-Yasmine, você está no caminho certo! Seu código está limpo, organizado e com muitos conceitos importantes aplicados. Com esses ajustes finos, sua API vai ficar ainda mais robusta e profissional. Continue praticando e explorando esses conceitos, pois eles são essenciais para qualquer desenvolvedor backend! 🚀💙
+Yasmine, você está no caminho certo e já entregou uma base muito sólida para sua API do Departamento de Polícia! 👮‍♀️👮‍♂️ Com esses ajustes, seu projeto vai ficar ainda mais robusto e profissional. Continue praticando e explorando essas melhorias, que você vai longe! 🚀
 
-Se precisar de mais ajuda, estarei aqui para te apoiar. Vamos juntos nessa jornada! 💪✨
+Se precisar de ajuda para entender algum ponto específico, pode contar comigo! 😉
 
-Um abraço do seu Code Buddy! 🤖👩‍💻👨‍💻
+Um abraço e bons códigos! 💙✨
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
