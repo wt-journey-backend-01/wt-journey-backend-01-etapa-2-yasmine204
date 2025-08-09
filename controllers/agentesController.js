@@ -15,7 +15,7 @@ const getAgentes = (req, res, next) => {
         }
 
         if(sort) {
-            const sortClean = sort.replace(/\s+/g, '');
+            const sortClean = sort.toLowerCase().replace(/\s+/g, '');
             const decreasing = sortClean.startsWith('-');
             const field = decreasing ? sortClean.slice(1) : sortClean;
 

@@ -3,12 +3,9 @@ function errorHandler(err, req, res, next) {
     
     const response = {
         status,
-        message: err.message || 'Erro interno do servidor.'
+        message: err.message || 'Erro interno do servidor.',
+        errors: Array.isArray(err.errors) ? err.errors : []
     };
-
-    if (err.errors && Object.keys(err.errors).length > 0) {
-        response.errors = err.errors;
-    }
 
     res.status(status).json(response);
 }

@@ -3,7 +3,7 @@ class ApiError extends Error {
         super(message);
         this.name = 'ApiError';
         this.statusCode = statusCode;
-        this.errors = errors;
+        this.errors = Array.isArray(errors) ? errors : [errors];
     }
 }
 
