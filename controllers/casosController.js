@@ -4,6 +4,7 @@ const { casosSchema } = require('../utils/casosValidation');
 const isValidUuid = require('../utils/uuidValidation');
 const ApiError = require('../utils/ApiError');
 const formatZodError = require('../utils/formatZodError');
+const normalizeText = require('../utils/normalizeText');
 
 const getCasos = (req, res, next) => {
     try {
@@ -11,19 +12,22 @@ const getCasos = (req, res, next) => {
         const { agente_id, status, q } = req.query;
 
         if(agente_id) {
-            casos = casos.filter(caso => caso.agente_id === agente_id);
+            casos = casos.filter((caso) => caso.agente_id === agente_id);
         }
 
         if(status) {
-            casos = casos.filter(caso => caso.status.toLowerCase() === status.toLowerCase());
+            casos = casos.filter((caso) => caso.status.toLowerCase() === status.toLowerCase());
         }
 
-        if (q && q.trim() !== '') {
-            const term = q.toLowerCase();
-            casos = casos.filter(caso =>
-                caso.titulo.toLowerCase().includes(term) ||
-                caso.descricao.toLowerCase().includes(term)
-            );
+        if (q) {
+            const term = normalizeText(q)
+
+            casos = casos.filter((caso) => {
+                const titulo = normalizeText(caso.titulo);
+                const descricao = normalizeText(caso.descricao);
+
+                return (titulo.includes(term) || descricao.includes(term));
+            });
         }
 
         res.status(200).json(casos);
@@ -59,12 +63,12 @@ const createCaso = (req, res, next) => {
         const { titulo, descricao, status, agente_id } = req.body;
 
         if(!isValidUuid(agente_id)) {
-            return next(new ApiError('ID de agente inválido.', 400));
+            return next(new ApiError('ID inválido.', 400));
         }
 
         const agenteExists = agentesRepository.findById(agente_id);
         if(!agenteExists) {
-            return next(new ApiError('Agente não encontrado para associar ao caso.', 404))
+            return next(new ApiError('Agente não encontrado.', 404))
         }
 
         const dataReceived = {
@@ -97,7 +101,7 @@ const updateCompletelyCaso = (req, res, next) => {
         const data = casosSchema.parse(req.body);
 
         if(!isValidUuid(data.agente_id)) {
-            return next(new ApiError('ID de agente inválido.', 400));
+            return next(new ApiError('ID inválido.', 400));
         }
 
         const agenteExists = agentesRepository.findById(data.agente_id);
@@ -132,12 +136,12 @@ const partiallyUpdateCaso = (req, res, next) => {
 
         if('agente_id' in partiallyData) {
             if(!isValidUuid(partiallyData.agente_id)) {
-                return next(new ApiError('ID de agente inválido', 400));
+                return next(new ApiError('ID inválido', 400));
             }
 
             const agenteExists = agentesRepository.findById(partiallyData.agente_id);
             if(!agenteExists) {
-                return next(new ApiError('Agente não encontrado para associar ao caso.', 404))
+                return next(new ApiError('Agente não encontrado.', 404))
             }
         }
 
@@ -182,7 +186,7 @@ const getAgenteByCasoId = (req, res, next) => {
         const { id } = req.params;
 
         if(!isValidUuid(id)) {
-            return next(new ApiError('ID de caso inválido.', 400));
+            return next(new ApiError('ID inválido.', 400));
         }
 
         const caso = casosRepository.findById(id);

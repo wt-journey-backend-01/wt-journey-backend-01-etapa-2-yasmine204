@@ -15,8 +15,9 @@ const getAgentes = (req, res, next) => {
         }
 
         if(sort) {
-            const decreasing = sort.startsWith('-');
-            const field = decreasing ? sort.slice(1) : sort;
+            const sortClean = sort.replace(/\s+/g, '');
+            const decreasing = sortClean.startsWith('-');
+            const field = decreasing ? sortClean.slice(1) : sortClean;
 
             if(field === 'dataDeIncorporacao') {
                 agentes = [...agentes].sort((a, b) => {
