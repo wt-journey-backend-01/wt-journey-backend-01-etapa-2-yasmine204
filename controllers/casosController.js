@@ -33,7 +33,7 @@ const getCasos = (req, res, next) => {
         res.status(200).json(casos);
     }
     catch(error) {
-        next(new ApiError(error.message, 400));
+        return next(new ApiError(error.message, 400));
     }
 };
 
@@ -54,7 +54,7 @@ const getCasoById = (req, res, next) => {
         res.status(200).json(caso);
     } 
     catch (error) {
-        next(new ApiError(error.message, 400));
+        return next(new ApiError(error.message, 400));
     }
 };
 
@@ -63,7 +63,7 @@ const createCaso = (req, res, next) => {
         const { titulo, descricao, status, agente_id } = req.body;
 
         if(!isValidUuid(agente_id)) {
-            return next(new ApiError('ID inválido.', 400));
+            return next(new ApiError('ID do agente inválido.', 400));
         }
 
         const agenteExists = agentesRepository.findById(agente_id);
@@ -86,7 +86,7 @@ const createCaso = (req, res, next) => {
     catch (error) {
         if(formatZodError(error, next)) return;
 
-        next(new ApiError(error.message));
+        return next(new ApiError(error.message));
     }
 };
 
@@ -101,7 +101,7 @@ const updateCompletelyCaso = (req, res, next) => {
         const data = casosSchema.parse(req.body);
 
         if(!isValidUuid(data.agente_id)) {
-            return next(new ApiError('ID inválido.', 400));
+            return next(new ApiError('ID do agente inválido.', 400));
         }
 
         const agenteExists = agentesRepository.findById(data.agente_id);
@@ -120,7 +120,7 @@ const updateCompletelyCaso = (req, res, next) => {
     catch (error) {
         if(formatZodError(error, next)) return;
 
-        next(new ApiError(error.message));
+        return next(new ApiError(error.message));
     }
 };
 
@@ -136,7 +136,7 @@ const partiallyUpdateCaso = (req, res, next) => {
 
         if('agente_id' in partiallyData) {
             if(!isValidUuid(partiallyData.agente_id)) {
-                return next(new ApiError('ID inválido', 400));
+                return next(new ApiError('ID do agente inválido', 400));
             }
 
             const agenteExists = agentesRepository.findById(partiallyData.agente_id);
@@ -156,7 +156,7 @@ const partiallyUpdateCaso = (req, res, next) => {
     catch (error) {
         if(formatZodError(error, next)) return;
 
-        next(new ApiError(error.message));
+        return next(new ApiError(error.message));
     }
 };
 
@@ -177,7 +177,7 @@ const deleteCaso = (req, res, next) => {
         res.status(204).send();
     } 
     catch (error) {
-        next(new ApiError(error.message, 400));
+        return next(new ApiError(error.message, 400));
     }
 };
 
@@ -202,7 +202,7 @@ const getAgenteByCasoId = (req, res, next) => {
         res.status(200).json(agente);
     } 
     catch (error) {
-        next(new ApiError(error.message, 400));    
+        return next(new ApiError(error.message, 400));    
     }
 };
 

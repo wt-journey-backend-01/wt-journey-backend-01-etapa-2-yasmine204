@@ -32,7 +32,7 @@ const getAgentes = (req, res, next) => {
         res.status(200).json(agentes);
     } 
     catch (error) {
-        next(new ApiError(error.message, 400));;
+        return next(new ApiError(error.message, 400));
     }
 };
 
@@ -53,7 +53,7 @@ const getAgentesById = (req, res, next) => {
         res.status(200).json(agente);
     } 
     catch (error) {
-        next(new ApiError(error.message, 400));
+        return next(new ApiError(error.message, 400));
     }
 };
 
@@ -76,7 +76,7 @@ const createAgente = (req, res, next) => {
     catch (error) {
         if(formatZodError(error, next)) return;
 
-        next(new ApiError(error.message));
+        return next(new ApiError(error.message));
     }
 };
 
@@ -100,7 +100,7 @@ const updateCompletelyAgente = (req, res, next) => {
     catch (error) {
         if(formatZodError(error, next)) return;
 
-        next(new ApiError(error.message));
+        return next(new ApiError(error.message));
     }
 };
 
@@ -124,7 +124,7 @@ const partiallyUpdateAgente = (req, res, next) => {
     catch (error) {
         if(formatZodError(error, next)) return;
 
-        next(new ApiError(error.message));
+        return next(new ApiError(error.message));
     }
 };
 
@@ -145,7 +145,7 @@ const deleteAgente = (req, res, next) => {
             res.status(204).send();
         } 
         catch (error) {
-            next(new ApiError(error.message, 400));
+            return next(new ApiError(error.message, 400));
         }
 };
  
