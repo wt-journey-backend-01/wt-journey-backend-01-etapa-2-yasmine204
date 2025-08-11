@@ -3,12 +3,17 @@ const ApiError = require('./ApiError');
 
 function formatZodError (error, next) {
     if(error instanceof ZodError && Array.isArray(error.issues)) {
-        const formattedErrors = error.issues.map(e => {
-            if(e.code === 'invalid_type') {
-                return { [e.path.join('.')]: `O campo ${e.path.join('.')} é obrigatório.` };
-            }
+        const formattedErrors = {};
+
+        error.issues.forEach(e => {
+            const field = e.path.join('.') || 'unknown';
             
-            return { [e.path.join('.')]: e.message };
+            if (e.code === 'invalid_type') {
+                formattedErrors[field] = `O campo ${field} é obrigatório.`;
+            } 
+            else {
+                formattedErrors[field] = e.message;
+            }
         });
 
         next(new ApiError('Parâmetros inválidos', 400, formattedErrors));

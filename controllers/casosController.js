@@ -199,6 +199,11 @@ const getAgenteByCasoId = (req, res, next) => {
 const searchCasos = (req, res, next) => {
     try {
         const { q } = req.query;
+
+        if(!q || q.trim() === '') {
+            return next(new ApiError('Parâmetro de busca q é obrigatório.', 400));
+        }
+
         const term = normalizeText(q);
         let casos = casosRepository.findAll();
 
@@ -211,7 +216,7 @@ const searchCasos = (req, res, next) => {
 
         res.status(200).json(casos);
     }
-    catch {
+    catch (error) {
         return next(new ApiError(error.message, 400));
     }
 };

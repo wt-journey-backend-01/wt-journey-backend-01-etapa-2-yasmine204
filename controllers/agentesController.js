@@ -15,7 +15,7 @@ const getAgentes = (req, res, next) => {
         }
 
         if(sort) {
-            const sortClean = sort.toLowerCase().replace(/\s+/g, '');
+            const sortClean = sort.replace(/\s+/g, '');
             const decreasing = sortClean.startsWith('-');
             const field = decreasing ? sortClean.slice(1) : sortClean;
 
@@ -23,7 +23,7 @@ const getAgentes = (req, res, next) => {
                 agentes = [...agentes].sort((a, b) => {
                     const dateA = new Date(a.dataDeIncorporacao).getTime();
                     const dateB = new Date(b.dataDeIncorporacao).getTime();
-                    
+
                     return decreasing ? dateB - dateA : dateA - dateB;
                 });
             }
