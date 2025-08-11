@@ -1,5 +1,6 @@
 function normalizeText (q) {
     const term = q
+        .replace(/['"]/g, '')
         .toLowerCase()
         .trim()
         .normalize('NFD')

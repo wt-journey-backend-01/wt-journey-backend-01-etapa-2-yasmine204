@@ -52,13 +52,31 @@ router.post('/', controller.createCaso);
 
 /**
  * @swagger
- * /casos/{id}/agente:
+ * /casos/search:
+ *  get:
+ *      summary: Busca casos pelo termo no título ou descrição (full-text search)
+ *      tags: [Casos]
+ *      parameters:
+ *          - in: query
+ *            name: q
+ *            required: true
+ *            schema:
+ *              type: string
+ *      responses:
+ *          200:
+ *              description: Lista de casos que contêm o termo no título ou descrição
+ */
+router.get('/search', controller.searchCasos);
+
+/**
+ * @swagger
+ * /casos/{caso_id}/agente:
  *  get:
  *      summary: Busca um agente pelo id do caso
  *      tags: [Casos]
  *      parameters:
  *          - in: path
- *            name: id
+ *            name: caso_id
  *            required: true
  *            schema:
  *              type: string
@@ -66,7 +84,7 @@ router.post('/', controller.createCaso);
  *          200:
  *              description: Agente encontrado com sucesso
  */
-router.get('/:id/agente', controller.getAgenteByCasoId);
+router.get('/:caso_id/agente', controller.getAgenteByCasoId);
 
 /**
  * @swagger
@@ -172,5 +190,7 @@ router.patch('/:id', controller.partiallyUpdateCaso);
  *              description: Caso deletado com sucesso
  */
 router.delete('/:id', controller.deleteCaso);
+
+
 
 module.exports = router;

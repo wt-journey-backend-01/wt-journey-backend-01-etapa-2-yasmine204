@@ -1,13 +1,19 @@
-function errorHandler(err, req, res, next) {
-    const status = err.statusCode || 500;
-    
-    const response = {
-        status,
-        message: err.message || 'Erro interno do servidor.',
-        errors: Array.isArray(err.errors) ? err.errors : []
-    };
+const ApiError = require('./ApiError');
 
-    res.status(status).json(response);
+function errorHandler(err, req, res, next) {
+    if (err instanceof ApiError) {
+        return res.status(err.statusCode).json({
+            status: err.statusCode,
+            message: err.message,
+            errors: Array.isArray(err.errors) ? err.errors : [],
+        });
+    }
+    
+    res.status(500).json({
+        status: 500,
+        message: 'Erro interno do servidor',
+        errors: [],
+    });
 }
 
 module.exports = errorHandler;

@@ -9,7 +9,7 @@ const normalizeText = require('../utils/normalizeText');
 const getCasos = (req, res, next) => {
     try {
         let casos = casosRepository.findAll();
-        const { agente_id, status, q } = req.query;
+        const { agente_id, status } = req.query;
 
         if(agente_id) {
             casos = casos.filter((caso) => caso.agente_id === agente_id);
@@ -17,17 +17,6 @@ const getCasos = (req, res, next) => {
 
         if(status) {
             casos = casos.filter((caso) => caso.status.toLowerCase() === status.toLowerCase());
-        }
-
-        if (q) {
-            const term = normalizeText(q)
-
-            casos = casos.filter((caso) => {
-                const titulo = normalizeText(caso.titulo);
-                const descricao = normalizeText(caso.descricao);
-
-                return (titulo.includes(term) || descricao.includes(term));
-            });
         }
 
         res.status(200).json(casos);
@@ -183,13 +172,14 @@ const deleteCaso = (req, res, next) => {
 
 const getAgenteByCasoId = (req, res, next) => {
     try {
-        const { id } = req.params;
+        const { caso_id } = req.params;
 
-        if(!isValidUuid(id)) {
+
+        if(!isValidUuid(caso_id)) {
             return next(new ApiError('ID inválido.', 400));
         }
 
-        const caso = casosRepository.findById(id);
+        const caso = casosRepository.findById(caso_id);
         if(!caso) {
             return next(new ApiError('Caso não encontrado.', 404));
         }
@@ -206,6 +196,26 @@ const getAgenteByCasoId = (req, res, next) => {
     }
 };
 
+const searchCasos = (req, res, next) => {
+    try {
+        const { q } = req.query;
+        const term = normalizeText(q);
+        let casos = casosRepository.findAll();
+
+        casos = casos.filter((caso) => {
+            const titulo = normalizeText(caso.titulo);
+            const descricao = normalizeText(caso.descricao);
+
+            return titulo.includes(term) || descricao.includes(term);
+        });
+
+        res.status(200).json(casos);
+    }
+    catch {
+        return next(new ApiError(error.message, 400));
+    }
+};
+
 module.exports = {
     getCasos,
     getCasoById,
@@ -213,5 +223,6 @@ module.exports = {
     updateCompletelyCaso,
     partiallyUpdateCaso,
     deleteCaso,
-    getAgenteByCasoId
+    getAgenteByCasoId,
+    searchCasos
 }
