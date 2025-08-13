@@ -1,15 +1,9 @@
 class ApiError extends Error {
-    constructor(message, statusCode = 500, errors = null) {
+    constructor(message, statusCode = 500, errors = []) {
         super(message);
         this.name = 'ApiError';
         this.statusCode = statusCode;
-        
-        if(Array.isArray(errors) || errors === null || typeof errors === 'object') {
-            this.errors = errors;
-        }
-        else {
-            this.errors = [errors];
-        }
+        this.errors = Array.isArray(errors) ? errors : [errors];
     }
 }
 
