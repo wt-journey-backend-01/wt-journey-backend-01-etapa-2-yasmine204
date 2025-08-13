@@ -31,7 +31,7 @@ const getCasoById = (req, res, next) => {
         const { id } = req.params;
 
         if(!isValidUuid(id)) {
-            return next(new ApiError('Parâmetros inválidos.', 400, { id: 'ID inválido.' }));
+            return next(new ApiError('ID inválido.', 400));
         }
 
         const caso = casosRepository.findById(id);
@@ -52,7 +52,7 @@ const createCaso = (req, res, next) => {
         const { titulo, descricao, status, agente_id } = req.body;
 
         if(!isValidUuid(agente_id)) {
-            return next(new ApiError('Parâmetros inválidos.', 400, { id: 'ID do agente inválido.' }));
+            return next(new ApiError('ID do agente inválido.', 400));
         }
 
         const agenteExists = agentesRepository.findById(agente_id);
@@ -84,13 +84,13 @@ const updateCompletelyCaso = (req, res, next) => {
         const { id } = req.params;
 
         if (!isValidUuid(id)) {
-        return next(new ApiError('Parâmetros inválidos.', 400, { id: 'ID inválido.' }));
+        return next(new ApiError('ID inválido.', 400));
         }
 
         const data = casosSchema.parse(req.body);
 
         if(!isValidUuid(data.agente_id)) {
-            return next(new ApiError('Parâmetros inválidos.', 400, { id: 'ID do agente inválido.' }));
+            return next(new ApiError('ID do agente inválido.', 400));
         }
 
         const agenteExists = agentesRepository.findById(data.agente_id);
@@ -118,14 +118,14 @@ const partiallyUpdateCaso = (req, res, next) => {
         const { id } = req.params;
 
         if(!isValidUuid(id)) {
-            return next(new ApiError('Parâmetros inválidos.', 400, { id: 'ID inválido.' }));
+            return next(new ApiError('ID inválido.', 400));
         }
 
         const partiallyData = casosSchema.partial().parse(req.body);
 
         if('agente_id' in partiallyData) {
             if(!isValidUuid(partiallyData.agente_id)) {
-                return next(new ApiError('Parâmetros inválidos.', 400, { id: 'ID do agente inválido.' }));
+                return next(new ApiError('ID do agente inválido', 400));
             }
 
             const agenteExists = agentesRepository.findById(partiallyData.agente_id);
@@ -154,7 +154,7 @@ const deleteCaso = (req, res, next) => {
         const { id } = req.params;
 
         if (!isValidUuid(id)) {
-            return next(new ApiError('Parâmetros inválidos.', 400, { id: 'ID inválido.' }));
+            return next(new ApiError('ID inválido.', 400));
         }
 
         const deleted = casosRepository.remove(id);
@@ -176,7 +176,7 @@ const getAgenteByCasoId = (req, res, next) => {
 
 
         if(!isValidUuid(caso_id)) {
-            return next(new ApiError('Parâmetros inválidos.', 400, { id: 'ID inválido.' }));
+            return next(new ApiError('ID inválido.', 400));
         }
 
         const caso = casosRepository.findById(caso_id);

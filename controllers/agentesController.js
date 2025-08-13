@@ -85,7 +85,7 @@ const updateCompletelyAgente = (req, res, next) => {
         const { id } = req.params;
 
         if(!isValidUuid(id)) {
-            return next(new ApiError('Parâmetros inválidos.', 400, { id: 'ID inválido.' }));
+            return next(new ApiError('ID inválido.', 400));
         }
 
         const data = agentesSchema.parse(req.body);
@@ -109,7 +109,7 @@ const partiallyUpdateAgente = (req, res, next) => {
         const { id } = req.params;
 
         if(!isValidUuid(id)) {
-            return next(new ApiError('Parâmetros inválidos.', 400, { id: 'ID inválido.' }));
+            return next(new ApiError('ID inválido.', 400));
         }
 
         const partiallyData = agentesSchema.partial().parse(req.body);
@@ -133,7 +133,7 @@ const deleteAgente = (req, res, next) => {
             const { id } = req.params;
     
             if (!isValidUuid(id)) {
-                return next(new ApiError('Parâmetros inválidos.', 400, { id: 'ID inválido.' }));
+                return next(new ApiError('ID inválido.', 400));
             }
     
             const deleted = repository.remove(id);
