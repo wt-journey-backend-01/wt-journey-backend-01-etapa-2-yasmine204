@@ -1,11 +1,11 @@
 const { z } = require('zod');
 
 const agentesSchema = z.object({
-    nome: z.string({ required_error: 'Nome é obrigatório' }).min(1, 'Nome não pode estar vazio.'),
+    nome: z.string({ required_error: "O campo 'nome' é obrigatório." }).min(1, "O campo 'nome' não pode estar vazio."),
     
     dataDeIncorporacao: z
-    .string({ required_error: 'Data de incorporação é obrigatória.' })
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato deve ser YYYY-MM-DD.')
+    .string({ required_error: "O campo 'dataDeIncorporacao' é obrigatório."  })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Campo dataDeIncorporacao deve seguir a formatação 'YYYY-MM-DD'")
     .refine((dateStr) => {
         const date = new Date(dateStr);
         
@@ -16,10 +16,10 @@ const agentesSchema = z.object({
 
         return date <= today;
     }, {
-        message: 'Data de incorporação não pode ser inválida ou estar no futuro.'
+        message: "O campo 'dataDeIncorporacao' não pode conter data inválida ou futura."
     }),
     
-    cargo: z.string({ required_error: 'Cargo é obrigatório' }).min(1, 'Cargo não pode estar vazio.')
+    cargo: z.string({ required_error: "O campo 'cargo' é obrigatório." }).min(1, "O campo 'cargo' não pode estar vazio.")
 }).strict();
 
 module.exports = { agentesSchema };

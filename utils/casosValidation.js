@@ -1,18 +1,18 @@
 const { z } = require('zod');
 
 const casosSchema = z.object({
-    titulo: z.string({ required_error: 'Título é obrigatório.' }).min(1, 'Título não pode estar vazio.'),
+    titulo: z.string({ required_error: "O campo 'título' é obrigatório." }).min(1, "O campo 'título' não pode estar vazio."),
     
-    descricao: z.string({ required_error: 'Descrição é obrigatória.' }).min(1, 'Descrição não pode estar vazia'),
+    descricao: z.string({ required_error: "O campo 'descrição' é obrigatório." }).min(1, "O campo 'descrição' não pode estar vazio."),
     
     status: z
-    .string({ required_error: 'Status é obrigatório.' })
+    .string({ required_error: "O campo 'título' é obrigatório." })
     .refine((val) => ['aberto', 'solucionado'].includes(val), {
-        message: 'Status deve ser aberto ou solucionado.'
+        message: "O campo 'status' pode ser somente 'aberto' ou 'solucionado'."
     }),
 
     agente_id: z
-    .string({ required_error: 'O ID do agente é obrigatório.' })
+    .string({ required_error: "O campo 'agente_id' é obrigatório." })
 }).strict();
 
 module.exports = { casosSchema };                                                                                                                                                                                                                                                                         

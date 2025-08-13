@@ -9,7 +9,7 @@ function formatZodError (error, next) {
             const field = e.path.join('.') || 'unknown';
             
             if (e.code === 'invalid_type') {
-                formattedErrors[field] = `O campo ${field} é obrigatório.`;
+                formattedErrors[field] = `O campo '${field}' é obrigatório.`;
             } 
             else {
                 formattedErrors[field] = e.message;
