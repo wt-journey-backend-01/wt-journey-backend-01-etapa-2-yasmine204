@@ -40,8 +40,6 @@ const getAgenteById = (req, res, next) => {
     try {
         const { id } = req.params; 
         
-        
-
         const agente = repository.findById(id);
 
         if(!agente) {

@@ -30,10 +30,6 @@ const getCasoById = (req, res, next) => {
     try {
         const { id } = req.params;
 
-        if(!isValidUuid(id)) {
-            return next(new ApiError('ID inválido.', 400));
-        }
-
         const caso = casosRepository.findById(id);
 
         if(!caso) {
@@ -50,10 +46,6 @@ const getCasoById = (req, res, next) => {
 const createCaso = (req, res, next) => {
     try {
         const { titulo, descricao, status, agente_id } = req.body;
-
-        if(!isValidUuid(agente_id)) {
-            return next(new ApiError('ID do agente inválido.', 400));
-        }
 
         const agenteExists = agentesRepository.findById(agente_id);
         if(!agenteExists) {
@@ -82,10 +74,6 @@ const createCaso = (req, res, next) => {
 const updateCompletelyCaso = (req, res, next) => {
     try {
         const { id } = req.params;
-
-        if (!isValidUuid(id)) {
-        return next(new ApiError('ID inválido.', 400));
-        }
 
         const data = casosSchema.parse(req.body);
 
@@ -116,10 +104,6 @@ const updateCompletelyCaso = (req, res, next) => {
 const partiallyUpdateCaso = (req, res, next) => {
     try {
         const { id } = req.params;
-
-        if(!isValidUuid(id)) {
-            return next(new ApiError('ID inválido.', 400));
-        }
 
         const partiallyData = casosSchema.partial().parse(req.body);
 
