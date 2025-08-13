@@ -64,7 +64,7 @@ router.post('/', controller.createAgente);
  *       200:
  *         description: Agente encontrado com sucesso
  */
-router.get('/:id', controller.getAgentesById);
+router.get('/:id', controller.getAgenteById);
 
 /**
  * @swagger

@@ -36,7 +36,7 @@ const getAgentes = (req, res, next) => {
     }
 };
 
-const getAgentesById = (req, res, next) => {
+const getAgenteById = (req, res, next) => {
     try {
         const { id } = req.params; 
         
@@ -151,7 +151,7 @@ const deleteAgente = (req, res, next) => {
  
 module.exports = {
     getAgentes,
-    getAgentesById,
+    getAgenteById,
     createAgente,
     updateCompletelyAgente,
     partiallyUpdateAgente,
