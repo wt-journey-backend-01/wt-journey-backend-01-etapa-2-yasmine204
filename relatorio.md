@@ -2,9 +2,9 @@
 
 # 🧪 Relatório de Avaliação – Journey Levty Etapa 1 - yasmine204
 
-**Data:** 13/08/2025 02:03
+**Data:** 13/08/2025 02:07
 
-**Nota Final:** `83.46/100`
+**Nota Final:** `87.35/100`
 **Status:** ✅ Aprovado
 
 ---
@@ -22,11 +22,13 @@
     - **Melhoria sugerida**: Ao tentar atualizar um caso inexistente com `PATCH /casos/:id`, o teste não recebeu `404 Not Found`. Certifique-se de que sua rota verifica a existência do recurso antes de tentar a atualização.
 
 ## ⭐ Itens de Destaque (recupera até 40 pontos)
-- Você conquistou `2` bônus! Excelente trabalho nos detalhes adicionais!
+- Você conquistou `3` bônus! Excelente trabalho nos detalhes adicionais!
   - 🌟 **Testes bônus passados**: `Simple Filtering: Estudante implementou endpoint de filtragem de caso por status corretamente`
     - Parabéns! Você implementou a filtragem de casos por status (`GET /casos?status=...`) corretamente. Isso adiciona uma funcionalidade poderosa à sua API para gerenciar casos.
   - 🌟 **Testes bônus passados**: `Simple Filtering: Estudante implementou endpoint de filtragem de caso por agente corretamente`
     - Ótimo! A filtragem de casos por `agente_id` (`GET /casos?agente_id=...`) está funcionando corretamente. Isso permite listar casos específicos de cada agente.
+  - 🌟 **Testes bônus passados**: `Custom Error: Estudante implementou mensagens de erro customizadas para argumentos de agente inválidos corretamente`
+    - Uau! Você implementou mensagens de erro customizadas para argumentos inválidos em agentes, com status `400 Bad Request` e detalhes específicos dos campos. Isso é uma excelente prática para APIs, fornecendo feedback claro aos desenvolvedores. Parabéns!
 
 ## ❌ Problemas Detectados (Descontos de até 100 pontos)
 - Nenhuma infração grave foi detectada. Muito bom nesse aspecto!
