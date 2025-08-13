@@ -40,9 +40,7 @@ const getAgenteById = (req, res, next) => {
     try {
         const { id } = req.params; 
         
-        if(!isValidUuid(id)) {
-            return next(new ApiError('ID inválido', 400));
-        }
+        
 
         const agente = repository.findById(id);
 

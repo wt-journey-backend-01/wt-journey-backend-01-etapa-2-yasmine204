@@ -84,12 +84,7 @@ const updateCompletelyCaso = (req, res, next) => {
         const { id } = req.params;
 
         if (!isValidUuid(id)) {
-            return next(new ApiError('ID inválido.', 400));
-        }
-
-        const caso = casosRepository.findById(id);
-        if(!caso) {
-            return next(new ApiError('Caso não encontrado.', 404));
+        return next(new ApiError('ID inválido.', 400));
         }
 
         const data = casosSchema.parse(req.body);
@@ -103,7 +98,11 @@ const updateCompletelyCaso = (req, res, next) => {
             return next(new ApiError('Agente não encontrado.', 404));
         }
 
-        const updated = casosRepository.updateCompletely(id, data);     
+        const updated = casosRepository.updateCompletely(id, data);
+
+        if (!updated) {
+            return next(new ApiError('Caso não encontrado.', 404));
+        }
 
         res.status(200).json(updated);
     } 
